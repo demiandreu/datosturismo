@@ -1,114 +1,111 @@
 'use strict';
 
-const INE_BASE_URL = 'https://servicios.ine.es/wstempus/js/es';
-const _cache = {};
+// INE CSV for table 2082 — Viajeros y pernoctaciones en apartamentos turísticos
+// Column format (semicolon-separated, no quotes):
+//   "38001 Adeje;Viajero;Residentes en España;2026M02;1.548"
+//   col 0: municipio code + name   e.g. "38001 Adeje"
+//   col 1: indicator               e.g. "Viajero", "Pernoctaciones"
+//   col 2: residency type          e.g. "Residentes en España", "Total"
+//   col 3: period                  e.g. "2026M02"
+//   col 4: value (ES number fmt)   e.g. "1.548"  → 1548  (dot = thousands sep)
 
-async function _fetchTable(tableId) {
-  if (_cache[tableId]) return _cache[tableId];
-  const url = `${INE_BASE_URL}/DATOS_TABLA/${tableId}?tip=AM&nult=24`;
-  const res = await fetch(url);
-  if (!res.ok) throw new Error(`Error ${res.status} al consultar tabla ${tableId} del INE`);
-  const data = await res.json();
-  _cache[tableId] = data;
-  return data;
+const INE_CSV_URL = 'https://www.ine.es/jaxiT3/files/t/csv_bdsc/2082.csv';
+
+let _csvRows = null;   // parsed rows, cached after first load
+
+// ── CSV loader ─────────────────────────────────────────────────────────────
+
+async function _loadCSV() {
+  if (_csvRows) return _csvRows;
+
+  const res = await fetch(INE_CSV_URL);
+  if (!res.ok) throw new Error(`Error ${res.status} al cargar el CSV del INE`);
+  const text = await res.text();
+
+  const rows = [];
+  const lines = text.split('\n');
+
+  // First line is the header — skip it
+  for (let i = 1; i < lines.length; i++) {
+    const line = lines[i].trim();
+    if (!line) continue;
+
+    const cols = line.split(';');
+    if (cols.length < 5) continue;
+
+    const municipioRaw = cols[0].trim();
+    const indicador    = cols[1].trim();
+    const residencia   = cols[2].trim();
+    const periodoRaw   = cols[3].trim();
+    const valorRaw     = cols[4].trim();
+
+    // Strip leading numeric code: "38001 Adeje" → "Adeje"
+    const municipio = municipioRaw.replace(/^\d+\s+/, '').trim();
+    if (!municipio) continue;
+
+    // Parse "2026M02" → year 2026, month 2
+    const m = periodoRaw.match(/^(\d{4})M(\d{2})$/);
+    if (!m) continue;
+    const year  = parseInt(m[1], 10);
+    const month = parseInt(m[2], 10);
+
+    // Spanish number format: "1.548" = 1548, "1.548,3" = 1548.3
+    const value = parseFloat(valorRaw.replace(/\./g, '').replace(',', '.'));
+    if (isNaN(value) || value <= 0) continue;
+
+    rows.push({ municipio, indicador, residencia, year, month, value });
+  }
+
+  _csvRows = rows;
+  console.log(`[INE] CSV cargado: ${rows.length} filas válidas`);
+  return rows;
 }
 
-// INE Nombre format: "Location. Indicator. Qualifier."
-// e.g. "Salou. Viajeros. Total."        →  "Salou"
-//      "Cambrils. Pernoctaciones. Total." →  "Cambrils"
-// The location is always the FIRST dot-separated segment.
-function _extractLocation(nombre) {
-  if (!nombre) return '';
-  const parts = nombre.split('.').map(p => p.trim()).filter(Boolean);
-  return parts[0] || '';
-}
+// ── Public API ─────────────────────────────────────────────────────────────
 
-// Real INE Data entry format:
-// { Fecha: '2026-02-01T00:00:00.000+01:00', T3_TipoDato: 'Provisional',
-//   T3_Periodo: 'M02', Anyo: 2026, Valor: null }
-// Month comes from T3_Periodo ('M01'–'M12'). Valor can be null for unpublished months.
-
-// Parse and sort a series Data array into {year, month, value} objects.
-// Skips entries where Valor is null or 0.
-function parseSeriesData(series) {
-  if (!series?.Data) return [];
-  const parsed = series.Data
-    .filter(d => d.Valor !== null && d.Valor !== undefined && d.Valor > 0)
-    .map(d => ({
-      year:  parseInt(d.Anyo, 10),
-      month: parseInt(String(d.T3_Periodo).replace('M', ''), 10),
-      value: parseFloat(d.Valor),
-    }))
-    .filter(d => !isNaN(d.year) && d.month > 0 && !isNaN(d.value))
-    .sort((a, b) => a.year !== b.year ? a.year - b.year : a.month - b.month);
-  return parsed;
-}
-
-// Return sorted list of all "puntos turísticos" found in table 2082
 async function getAvailableLocations() {
-  const data = await _fetchTable('2082');
-
-  // Diagnostic: log first 10 raw Nombre values so the format is visible in console
-  console.log('[INE] Primeros 10 Nombre de tabla 2082:',
-    data.slice(0, 10).map(s => s.Nombre));
-  console.log('[INE] Ejemplo de extracción (primeros 5):',
-    data.slice(0, 5).map(s => ({ Nombre: s.Nombre, extraído: _extractLocation(s.Nombre) })));
-
-  const seen = new Set();
-  data.forEach(s => {
-    const loc = _extractLocation(s.Nombre);
-    if (loc) seen.add(loc);
-  });
+  const rows = await _loadCSV();
+  const seen = new Set(rows.map(r => r.municipio));
   const locations = [...seen].sort((a, b) => a.localeCompare(b, 'es'));
   console.log(`[INE] LISTA COMPLETA DE PUNTOS TURÍSTICOS (${locations.length} total):\n` + locations.join('\n'));
   return locations;
 }
 
-// Return viajeros + pernoctaciones data arrays for a given municipio name
 async function getMunicipioData(municipioName) {
-  const data = await _fetchTable('2082');
-  const name = municipioName.toLowerCase();
+  const rows  = await _loadCSV();
+  const name  = municipioName.toLowerCase();
+  const match = rows.filter(r => r.municipio.toLowerCase() === name);
 
-  const matching = data.filter(s =>
-    _extractLocation(s.Nombre).toLowerCase() === name
+  // Use "Total" residency to avoid double-counting; fall back to any rows if absent
+  const byIndicator = (keyword, residencia = 'total') => {
+    const subset = match.filter(r =>
+      new RegExp(keyword, 'i').test(r.indicador) &&
+      r.residencia.toLowerCase() === residencia
+    );
+    if (subset.length) return subset;
+    // fallback: any residency
+    return match.filter(r => new RegExp(keyword, 'i').test(r.indicador));
+  };
+
+  const vRows = byIndicator('viajero');
+  const pRows = byIndicator('pernoct');
+
+  // Sort chronologically
+  const sort = arr => [...arr].sort((a, b) =>
+    a.year !== b.year ? a.year - b.year : a.month - b.month
   );
 
-  const viajerosSeries = matching.find(s => /viajero/i.test(s.Nombre));
-  const pernoctSeries  = matching.find(s => /pernoct/i.test(s.Nombre));
+  const viajeros       = sort(vRows);
+  const pernoctaciones = sort(pRows);
 
-  console.log(`[INE] getMunicipioData("${municipioName}") — ${matching.length} series encontradas:`);
-  console.log('  Nombres:', matching.map(s => s.Nombre));
-  console.log('  viajeros →', viajerosSeries?.Nombre ?? 'NO ENCONTRADA');
-  console.log('  pernoct  →', pernoctSeries?.Nombre  ?? 'NO ENCONTRADA');
+  console.log(`[INE] "${municipioName}": viajeros=${viajeros.length} pts, pernoct=${pernoctaciones.length} pts`);
+  if (viajeros.length)       console.log('  último viajeros:', viajeros[viajeros.length - 1]);
+  if (pernoctaciones.length) console.log('  último pernoct:', pernoctaciones[pernoctaciones.length - 1]);
 
-  const viajeros       = parseSeriesData(viajerosSeries);
-  const pernoctaciones = parseSeriesData(pernoctSeries);
-
-  console.log('[INE] viajeros parseado:', viajeros);
-  console.log('[INE] pernoctaciones parseado:', pernoctaciones);
-
-  return { raw: matching, viajeros, pernoctaciones };
+  return { viajeros, pernoctaciones };
 }
 
-// Return grado de ocupación data for a province from table 2072
-async function getOcupacionData(provinciaName) {
-  try {
-    const data = await _fetchTable('2072');
-    const prov = provinciaName.toLowerCase();
-    const matching = data.filter(s =>
-      s.Nombre && s.Nombre.toLowerCase().includes(prov)
-    );
-    // Prefer a series explicitly about "ocupación por plazas" or similar
-    const series = matching.find(s => /ocupaci/i.test(s.Nombre)) || matching[0];
-    console.log(`[INE] Ocupación para "${provinciaName}":`, series?.Nombre ?? 'no encontrado');
-    return parseSeriesData(series);
-  } catch (e) {
-    console.warn('[INE] Ocupación no disponible:', e.message);
-    return [];
-  }
-}
-
-// Warm both caches on page load so later calls are instant
+// Warm the cache on page load so the first Ver datos click is instant
 async function prefetchAll() {
-  await Promise.allSettled([_fetchTable('2082'), _fetchTable('2072')]);
+  await _loadCSV().catch(e => console.warn('[INE] Prefetch fallido:', e.message));
 }
