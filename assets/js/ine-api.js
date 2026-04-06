@@ -23,17 +23,34 @@ function _extractLocation(nombre) {
   return parts[0] || '';
 }
 
-// Parse and sort a series Data array into {year, month, value} objects
+// INE Periodo field is a Spanish month name: "enero", "febrero", … "diciembre"
+// (not "M01"/"M08" as assumed). Map to 1-12.
+const _MESES_ES = {
+  'enero': 1, 'febrero': 2, 'marzo': 3, 'abril': 4,
+  'mayo': 5, 'junio': 6, 'julio': 7, 'agosto': 8,
+  'septiembre': 9, 'octubre': 10, 'noviembre': 11, 'diciembre': 12,
+};
+
+function _parsePeriodo(p) {
+  const s = String(p).trim().toLowerCase();
+  if (_MESES_ES[s]) return _MESES_ES[s];
+  // Numeric fallback for "M01"–"M12" format (other tables)
+  const n = parseInt(s.replace(/\D/g, ''), 10);
+  return isNaN(n) ? 0 : n;
+}
+
+// Parse and sort a series Data array into {year, month, value} objects.
+// Skips entries with Secreto:true (suppressed by INE) and null Valor.
 function parseSeriesData(series) {
   if (!series?.Data) return [];
   return series.Data
-    .filter(d => d.Valor !== null && d.Valor !== undefined)
+    .filter(d => d.Secreto !== true && d.Valor !== null && d.Valor !== undefined)
     .map(d => ({
       year:  parseInt(d.Anyo, 10),
-      month: parseInt(String(d.Periodo).replace(/\D/g, ''), 10),
+      month: _parsePeriodo(d.Periodo),
       value: parseFloat(d.Valor),
     }))
-    .filter(d => !isNaN(d.year) && !isNaN(d.month) && !isNaN(d.value))
+    .filter(d => !isNaN(d.year) && d.month > 0 && !isNaN(d.value))
     .sort((a, b) => a.year !== b.year ? a.year - b.year : a.month - b.month);
 }
 
@@ -73,6 +90,12 @@ async function getMunicipioData(municipioName) {
   console.log('  Nombres:', matching.map(s => s.Nombre));
   console.log('  viajeros →', viajerosSeries?.Nombre ?? 'NO ENCONTRADA');
   console.log('  pernoct  →', pernoctSeries?.Nombre  ?? 'NO ENCONTRADA');
+
+  // Log raw Data structure so Anyo/Periodo/Valor/Secreto format is visible
+  if (viajerosSeries?.Data) {
+    console.log('[INE] viajeros Data completo:', viajerosSeries.Data);
+    console.log('[INE] viajeros primer dato (ejemplo):', viajerosSeries.Data[0]);
+  }
 
   return {
     raw:            matching,
