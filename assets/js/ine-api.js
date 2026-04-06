@@ -60,7 +60,7 @@ async function getAvailableLocations() {
     if (loc) seen.add(loc);
   });
   const locations = [...seen].sort((a, b) => a.localeCompare(b, 'es'));
-  console.log('[INE] Puntos turísticos encontrados:', locations.length, '— primeros 10:', locations.slice(0, 10));
+  console.log(`[INE] LISTA COMPLETA DE PUNTOS TURÍSTICOS (${locations.length} total):\n` + locations.join('\n'));
   return locations;
 }
 
