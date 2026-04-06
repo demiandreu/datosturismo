@@ -13,12 +13,17 @@ async function _fetchTable(tableId) {
   return data;
 }
 
-// INE Nombre format: "Indicator description. Location name"
-// The location is always after the last period.
+// INE Nombre format: "Indicator. Location. Qualifier."
+// e.g. "Viajeros. Salou. Total."  →  "Salou"
+//      "Pernoctaciones. Salou. Total." →  "Salou"
+// The location is the segment between the FIRST and LAST dot-separated parts.
+// Falls back to the last non-empty segment if there are only two parts.
 function _extractLocation(nombre) {
   if (!nombre) return '';
-  const parts = nombre.split('.');
-  return parts[parts.length - 1].trim();
+  const parts = nombre.split('.').map(p => p.trim()).filter(Boolean);
+  if (parts.length >= 3) return parts[1];   // middle segment
+  if (parts.length === 2) return parts[1];  // "Indicator. Location"
+  return parts[0];
 }
 
 // Parse and sort a series Data array into {year, month, value} objects
