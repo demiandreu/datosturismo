@@ -1,1 +1,64 @@
-/* datosturismo.es — custom styles (placeholder) */
+/* ── DatosTurismo.es — custom styles ─────────────────────────────────────── */
+
+/* Filter bar */
+.filter-bar {
+  position: sticky;
+  top: 0;
+  z-index: 1020;
+}
+
+/* Stat cards */
+.stat-card-icon {
+  width: 2.5rem;
+  height: 2.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.5rem;
+  font-size: 1.2rem;
+}
+
+/* Termómetro badge */
+.termometro-badge {
+  min-width: 9rem;
+}
+
+/* Chart containers */
+.chart-card canvas {
+  max-height: 260px;
+}
+
+/* Welcome state illustration */
+.welcome-icon {
+  font-size: 5rem;
+  line-height: 1;
+}
+
+/* Loading overlay inside main */
+#ui-loading {
+  min-height: 30vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Navbar brand accent */
+.navbar-brand .brand-tld {
+  color: #ffc107;
+}
+
+/* Footer */
+footer a {
+  color: inherit;
+}
+footer a:hover {
+  color: #0d6efd;
+}
+
+/* Responsive tweaks */
+@media (max-width: 575.98px) {
+  .filter-bar .row > div {
+    flex: 0 0 100%;
+  }
+}
