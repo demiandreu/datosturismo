@@ -283,6 +283,90 @@ const SPAIN_GEO = {
   'Comunitat Valenciana':        ['Alicante/Alacant','Castellón/Castelló','Valencia/València'],
 };
 
+// ── Province → municipios mapping (INE table 2082 puntos turísticos) ──────
+// Keys must match province names used in SPAIN_GEO above.
+// Values are the location names as extracted from the INE Nombre field.
+// If a province has no entry or yields no API matches, all locations are shown.
+const MUNICIPIOS_POR_PROVINCIA = {
+  // Andalucía
+  'Almería':    ['Mojácar','Roquetas de Mar','Vera'],
+  'Cádiz':      ['Chiclana de la Frontera','Conil de la Frontera','El Puerto de Santa María','Rota','Tarifa','Vejer de la Frontera'],
+  'Córdoba':    ['Córdoba'],
+  'Granada':    ['Almuñécar','Motril','Salobreña'],
+  'Huelva':     ['Cartaya','Isla Cristina','Lepe','Punta Umbría'],
+  'Jaén':       ['Cazorla','Úbeda'],
+  'Málaga':     ['Benalmádena','Estepona','Fuengirola','Marbella','Mijas','Nerja','Rincón de la Victoria','Torremolinos','Torrox'],
+  'Sevilla':    ['Sevilla'],
+  // Aragón
+  'Huesca':     ['Aínsa-Sobrarbe','Benasque','Biescas','Boltaña','Canfranc','Jaca','Panticosa','Sabiñánigo'],
+  'Teruel':     ['Albarracín','Teruel'],
+  'Zaragoza':   ['Zaragoza'],
+  // Asturias
+  'Asturias':   ['Gijón','Llanes','Navia','Oviedo','Ribadesella','Tapia de Casariego'],
+  // Baleares
+  'Illes Balears': ['Alcudia','Artà','Calviá','Ciutadella de Menorca','Felanitx','Llucmajor',
+                    'Manacor','Palma','Pollença','Sant Antoni de Portmany','Sant Joan de Labritja',
+                    'Sant Josep de sa Talaia','Sant Llorenç des Cardassar','Santa Eulàlia des Riu',
+                    'Santanyí','Ses Salines','Sóller'],
+  // Canarias
+  'Las Palmas':              ['Las Palmas de Gran Canaria','Mogán','Puerto del Rosario',
+                              'San Bartolomé de Tirajana','Tías','Yaiza'],
+  'Santa Cruz de Tenerife':  ['Adeje','Arona','Granadilla de Abona','La Laguna',
+                              'Puerto de la Cruz','San Miguel de Abona','Santa Cruz de Tenerife',
+                              'Santiago del Teide'],
+  // Cantabria
+  'Cantabria':  ['Castro-Urdiales','Laredo','Noja','Santander','Santoña','Val de San Vicente'],
+  // Castilla-La Mancha
+  'Albacete':   ['Albacete'],
+  'Ciudad Real':['Almagro','Ciudad Real'],
+  'Cuenca':     ['Cuenca'],
+  'Guadalajara':['Guadalajara','Sigüenza'],
+  'Toledo':     ['Toledo'],
+  // Castilla y León
+  'Ávila':      ['Ávila'],
+  'Burgos':     ['Burgos'],
+  'León':       ['León'],
+  'Palencia':   ['Palencia'],
+  'Salamanca':  ['Salamanca'],
+  'Segovia':    ['Segovia'],
+  'Soria':      ['Soria'],
+  'Valladolid': ['Valladolid'],
+  'Zamora':     ['Zamora'],
+  // Cataluña
+  'Barcelona':  ['Calella','Castelldefels','Sitges','Vilanova i la Geltrú'],
+  'Girona':     ['Blanes','Castell-Platja d\'Aro','Lloret de Mar','Palafrugell',
+                 'Palamós','Roses','Santa Susanna','Tossa de Mar'],
+  'Lleida':     ['Baqueira Beret','Naut Aran','Vielha e Mijaran'],
+  'Tarragona':  ['Cambrils','Mont-roig del Camp','Salou','Tarragona',
+                 'Vandellòs i l\'Hospitalet de l\'Infant'],
+  // Extremadura
+  'Badajoz':    ['Badajoz','Mérida','Zafra'],
+  'Cáceres':    ['Cáceres','Jarandilla de la Vera','Plasencia'],
+  // Galicia
+  'A Coruña':   ['A Coruña','Carnota','Cedeira','Ferrol','Muros','Noia','Oleiros'],
+  'Lugo':       ['Burela','Lugo','Ribadeo','Viveiro'],
+  'Ourense':    ['Ourense','Xinzo de Limia'],
+  'Pontevedra': ['Baiona','Cangas','Moaña','Pontevedra','Sanxenxo','Vigo'],
+  // La Rioja
+  'La Rioja':   ['Arnedo','Calahorra','Logroño'],
+  // Madrid
+  'Madrid':     ['Alcalá de Henares','Aranjuez','Madrid'],
+  // Murcia
+  'Murcia':     ['Águilas','Cartagena','Los Alcázares','Mazarrón','Murcia','San Pedro del Pinatar'],
+  // Navarra
+  'Navarra':    ['Pamplona'],
+  // País Vasco
+  'Álava':      ['Vitoria-Gasteiz'],
+  'Gipuzkoa':   ['Donostia-San Sebastián','Zarautz'],
+  'Bizkaia':    ['Bilbao'],
+  // Valencia
+  'Alicante/Alacant':     ['Altea','Benidorm','Calp','Dénia','El Campello',
+                           'Guardamar del Segura','La Vila Joiosa','Orihuela',
+                           'Pilar de la Horadada','Santa Pola','Torrevieja','Xàbia'],
+  'Castellón/Castelló':   ['Alcossebre','Benicàssim','Oropesa del Mar','Peñíscola','Vinaròs'],
+  'Valencia/València':    ['Cullera','Gandia','Oliva','Valencia'],
+};
+
 // ── DOM refs ──────────────────────────────────────────────────────────────
 const selCCAA        = document.getElementById('sel-ccaa');
 const selProv        = document.getElementById('sel-provincia');
@@ -329,6 +413,30 @@ function populateCCAA() {
   });
 }
 
+// Return the subset of _allLocations for the given province (case-insensitive
+// match against MUNICIPIOS_POR_PROVINCIA). Falls back to all locations if the
+// province is unknown or yields no API matches.
+function _locationsForProvincia(prov) {
+  if (!prov) return _allLocations;
+  const known = (MUNICIPIOS_POR_PROVINCIA[prov] || []).map(m => m.toLowerCase());
+  if (!known.length) return _allLocations;
+  const filtered = _allLocations.filter(loc => known.includes(loc.toLowerCase()));
+  // If nothing matched (mapping names differ from API names), show all so the
+  // dropdown is never left empty.
+  return filtered.length ? filtered : _allLocations;
+}
+
+// Apply province filter + optional text search, then repopulate the select.
+function _applyFilters() {
+  const prov = selProv.value;
+  const q    = inputMunSearch.value.trim().toLowerCase();
+  let list   = _locationsForProvincia(prov);
+  if (q) list = list.filter(loc => loc.toLowerCase().includes(q));
+  _populateSelect(list);
+  if (list.length === 1) selMun.value = list[0];
+  checkButtonReady();
+}
+
 // ── CCAA → Province cascade ───────────────────────────────────────────────
 selCCAA.addEventListener('change', () => {
   const ccaa = selCCAA.value;
@@ -341,10 +449,17 @@ selCCAA.addEventListener('change', () => {
   } else {
     selProv.disabled = true;
   }
+  // Reset municipio list to all when CCAA changes
+  inputMunSearch.value = '';
+  _populateSelect(_allLocations);
   checkButtonReady();
 });
 
-selProv.addEventListener('change', checkButtonReady);
+selProv.addEventListener('change', () => {
+  inputMunSearch.value = '';
+  _applyFilters();
+});
+
 selMun.addEventListener('change', checkButtonReady);
 
 // ── Load municipios from API ───────────────────────────────────────────────
@@ -377,16 +492,7 @@ async function loadMunicipios() {
 }
 
 // ── Search input → filter select options ──────────────────────────────────
-inputMunSearch.addEventListener('input', () => {
-  const q = inputMunSearch.value.trim().toLowerCase();
-  const filtered = q
-    ? _allLocations.filter(loc => loc.toLowerCase().includes(q))
-    : _allLocations;
-  _populateSelect(filtered);
-  // Auto-select if exactly one result remains
-  if (filtered.length === 1) selMun.value = filtered[0];
-  checkButtonReady();
-});
+inputMunSearch.addEventListener('input', _applyFilters);
 
 // ── Ver datos click ───────────────────────────────────────────────────────
 btnVer.addEventListener('click', async () => {
