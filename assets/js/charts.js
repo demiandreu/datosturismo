@@ -2,7 +2,6 @@
 
 const MESES = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
 
-// Colour palette per year index
 const PALETTE = [
   { line: '#adb5bd', bar: 'rgba(173,181,189,0.65)', border: '#6c757d' },
   { line: '#0d6efd', bar: 'rgba(13,110,253,0.70)',  border: '#0a58ca' },
@@ -17,13 +16,13 @@ function _destroy(id) {
 
 function _destroyAll() { Object.keys(_activeCharts).forEach(_destroy); }
 
-// Group sorted data into { year: [null×12] } buckets
+// Group sorted {year,month,value} array into { year: [null×12] } buckets
 function _byYear(data) {
   const map = {};
-  data.forEach(d => {
+  for (const d of data) {
     if (!map[d.year]) map[d.year] = Array(12).fill(null);
     map[d.year][d.month - 1] = d.value;
-  });
+  }
   return map;
 }
 
@@ -38,7 +37,7 @@ function fmtNum(v) {
   return Math.round(v).toLocaleString('es-ES');
 }
 
-// ── Line chart ─────────────────────────────────────────────────────────────
+// ── Line chart (year-over-year) ────────────────────────────────────────────
 
 function renderLineChart(canvasId, data, title) {
   _destroy(canvasId);
@@ -67,26 +66,11 @@ function renderLineChart(canvasId, data, title) {
         };
       }),
     },
-    options: {
-      responsive: true,
-      interaction: { mode: 'index', intersect: false },
-      plugins: {
-        legend: { position: 'top', labels: { boxWidth: 12 } },
-        title:  { display: true, text: title, font: { size: 13 } },
-        tooltip: {
-          callbacks: {
-            label: ctx => ` ${ctx.dataset.label}: ${fmtNum(ctx.parsed.y)}`,
-          },
-        },
-      },
-      scales: {
-        y: { beginAtZero: true, ticks: { callback: _axisFormatter } },
-      },
-    },
+    options: _lineOpts(title),
   });
 }
 
-// ── Bar chart ───────────────────────────────────────────────────────────────
+// ── Bar chart (year-over-year grouped) ────────────────────────────────────
 
 function renderBarChart(canvasId, data, title) {
   _destroy(canvasId);
@@ -102,62 +86,167 @@ function renderBarChart(canvasId, data, title) {
       labels: MESES,
       datasets: years.map((yr, i) => {
         const c = PALETTE[i] ?? PALETTE[0];
-        return {
-          label: yr,
-          data: byYear[yr],
-          backgroundColor: c.bar,
-          borderColor: c.border,
-          borderWidth: 1,
-        };
+        return { label: yr, data: byYear[yr], backgroundColor: c.bar, borderColor: c.border, borderWidth: 1 };
       }),
+    },
+    options: _barOpts(title),
+  });
+}
+
+// ── Nacional vs Extranjero donut ───────────────────────────────────────────
+
+function renderDonutChart(canvasId, nacionales, extranjeros) {
+  _destroy(canvasId);
+  const ctx = document.getElementById(canvasId)?.getContext('2d');
+  if (!ctx) return;
+
+  const lastVal = arr => arr.length ? arr[arr.length - 1].value : 0;
+  const nac = lastVal(nacionales);
+  const ext = lastVal(extranjeros);
+  if (!nac && !ext) return;
+
+  _activeCharts[canvasId] = new Chart(ctx, {
+    type: 'doughnut',
+    data: {
+      labels: ['Residentes en España', 'Residentes en el extranjero'],
+      datasets: [{
+        data: [nac, ext],
+        backgroundColor: ['rgba(13,110,253,0.8)', 'rgba(255,193,7,0.85)'],
+        borderColor: ['#0d6efd', '#ffc107'],
+        borderWidth: 2,
+      }],
     },
     options: {
       responsive: true,
-      interaction: { mode: 'index', intersect: false },
       plugins: {
-        legend: { position: 'top', labels: { boxWidth: 12 } },
-        title:  { display: true, text: title, font: { size: 13 } },
-        tooltip: {
-          callbacks: {
-            label: ctx => ` ${ctx.dataset.label}: ${fmtNum(ctx.parsed.y)}`,
-          },
-        },
-      },
-      scales: {
-        y: { beginAtZero: true, ticks: { callback: _axisFormatter } },
+        legend: { position: 'bottom', labels: { boxWidth: 12 } },
+        title:  { display: true, text: 'Viajeros — nacional vs extranjero (último mes)', font: { size: 13 } },
+        tooltip: { callbacks: { label: c => ` ${c.label}: ${fmtNum(c.parsed)}` } },
       },
     },
   });
 }
 
-// ── Stat cards ──────────────────────────────────────────────────────────────
+// ── Comparison line chart (two municipios, chronological) ─────────────────
 
-function updateStatCards(viajeros, pernoctaciones, ocupacion) {
-  // parseSeriesData already filters nulls and zeros, so last entry is the
-  // latest published data point.
+function renderComparisonChart(canvasId, name1, data1, name2, data2) {
+  _destroy(canvasId);
+  const ctx = document.getElementById(canvasId)?.getContext('2d');
+  if (!ctx || (!data1.length && !data2.length)) return;
+
+  // Build sorted chronological labels from the union of both series
+  const keySet = new Set();
+  [...data1, ...data2].forEach(d => keySet.add(`${d.year}-${String(d.month).padStart(2, '0')}`));
+  const keys = [...keySet].sort();
+
+  const toArr = data => {
+    const map = {};
+    data.forEach(d => { map[`${d.year}-${String(d.month).padStart(2, '0')}`] = d.value; });
+    return keys.map(k => map[k] ?? null);
+  };
+
+  _activeCharts[canvasId] = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: keys.map(k => { const [y, m] = k.split('-'); return `${MESES[+m - 1]} ${y}`; }),
+      datasets: [
+        { label: name1, data: toArr(data1), borderColor: '#0d6efd', backgroundColor: 'rgba(13,110,253,0.08)', borderWidth: 2.5, tension: 0.35, pointRadius: 3, fill: false },
+        { label: name2, data: toArr(data2), borderColor: '#dc3545', backgroundColor: 'rgba(220,53,69,0.08)',  borderWidth: 2.5, tension: 0.35, pointRadius: 3, fill: false },
+      ],
+    },
+    options: _lineOpts('Comparativa pernoctaciones'),
+  });
+}
+
+// ── Top 10 horizontal bar ──────────────────────────────────────────────────
+
+function renderTop10Chart(canvasId, top10) {
+  _destroy(canvasId);
+  const ctx = document.getElementById(canvasId)?.getContext('2d');
+  if (!ctx || !top10.length) return;
+
+  const { year, month } = top10[0];
+
+  _activeCharts[canvasId] = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: top10.map(d => d.municipio),
+      datasets: [{
+        label: 'Pernoctaciones',
+        data: top10.map(d => d.value),
+        backgroundColor: top10.map((_, i) => i === 0 ? 'rgba(13,110,253,0.85)' : 'rgba(13,110,253,0.55)'),
+        borderColor: '#0d6efd',
+        borderWidth: 1,
+      }],
+    },
+    options: {
+      indexAxis: 'y',
+      responsive: true,
+      plugins: {
+        legend: { display: false },
+        title:  { display: true, text: `Top 10 por pernoctaciones — ${MESES[month - 1]} ${year}`, font: { size: 13 } },
+        tooltip: { callbacks: { label: c => ` ${fmtNum(c.parsed.x)}` } },
+      },
+      scales: { x: { beginAtZero: true, ticks: { callback: _axisFormatter } } },
+    },
+  });
+}
+
+// ── Shared chart option factories ──────────────────────────────────────────
+
+function _lineOpts(title) {
+  return {
+    responsive: true,
+    interaction: { mode: 'index', intersect: false },
+    plugins: {
+      legend: { position: 'top', labels: { boxWidth: 12 } },
+      title:  { display: true, text: title, font: { size: 13 } },
+      tooltip: { callbacks: { label: c => ` ${c.dataset.label}: ${fmtNum(c.parsed.y)}` } },
+    },
+    scales: { y: { beginAtZero: true, ticks: { callback: _axisFormatter } } },
+  };
+}
+
+function _barOpts(title) {
+  return {
+    responsive: true,
+    interaction: { mode: 'index', intersect: false },
+    plugins: {
+      legend: { position: 'top', labels: { boxWidth: 12 } },
+      title:  { display: true, text: title, font: { size: 13 } },
+      tooltip: { callbacks: { label: c => ` ${c.dataset.label}: ${fmtNum(c.parsed.y)}` } },
+    },
+    scales: { y: { beginAtZero: true, ticks: { callback: _axisFormatter } } },
+  };
+}
+
+// ── Stat cards ─────────────────────────────────────────────────────────────
+
+function updateStatCards(viajeros, pernoctaciones, nacionales, extranjeros) {
   const last = arr => arr.length ? arr[arr.length - 1] : null;
 
   const lv = last(viajeros);
   const lp = last(pernoctaciones);
-  const lo = last(ocupacion);
 
-  document.getElementById('card-viajeros-val').textContent =
-    lv ? fmtNum(lv.value) : '—';
-  document.getElementById('card-viajeros-sub').textContent =
-    lv ? `${MESES[lv.month - 1]} ${lv.year}` : 'Sin datos';
+  document.getElementById('card-viajeros-val').textContent  = lv ? fmtNum(lv.value) : '—';
+  document.getElementById('card-viajeros-sub').textContent  = lv ? `${MESES[lv.month - 1]} ${lv.year}` : 'Sin datos';
+  document.getElementById('card-pernoct-val').textContent   = lp ? fmtNum(lp.value) : '—';
+  document.getElementById('card-pernoct-sub').textContent   = lp ? `${MESES[lp.month - 1]} ${lp.year}` : 'Sin datos';
 
-  document.getElementById('card-pernoct-val').textContent =
-    lp ? fmtNum(lp.value) : '—';
-  document.getElementById('card-pernoct-sub').textContent =
-    lp ? `${MESES[lp.month - 1]} ${lp.year}` : 'Sin datos';
-
-  document.getElementById('card-ocup-val').textContent =
-    lo ? lo.value.toFixed(1) + '%' : '—';
-  document.getElementById('card-ocup-sub').textContent =
-    lo ? `${MESES[lo.month - 1]} ${lo.year}` : 'Sin datos';
+  // Third card: % extranjero viajeros
+  const ln = last(nacionales);
+  const le = last(extranjeros);
+  if (ln && le && ln.year === le.year && ln.month === le.month) {
+    const pct = (le.value / (ln.value + le.value) * 100).toFixed(1);
+    document.getElementById('card-extra-val').textContent = pct + '%';
+    document.getElementById('card-extra-sub').textContent = `Extranjeros · ${MESES[le.month - 1]} ${le.year}`;
+  } else {
+    document.getElementById('card-extra-val').textContent = '—';
+    document.getElementById('card-extra-sub').textContent = 'Sin datos';
+  }
 }
 
-// ── Termómetro ──────────────────────────────────────────────────────────────
+// ── Termómetro ─────────────────────────────────────────────────────────────
 
 function updateTermometro(pernoctaciones) {
   const el = document.getElementById('termometro-content');
@@ -172,35 +261,25 @@ function updateTermometro(pernoctaciones) {
   const prev = pernoctaciones.find(d => d.year === last.year - 1 && d.month === last.month);
 
   if (!prev || prev.value === 0) {
-    el.innerHTML = `
-      <span class="text-muted">
-        Último dato: ${fmtNum(last.value)} pernoctaciones
-        (${MESES[last.month - 1]} ${last.year}).
-        Sin dato del año anterior para comparar.
-      </span>`;
+    el.innerHTML = `<span class="text-muted">Último dato: ${fmtNum(last.value)} pernoctaciones (${MESES[last.month - 1]} ${last.year}). Sin dato del año anterior para comparar.</span>`;
     return;
   }
 
-  const pct   = (last.value - prev.value) / prev.value * 100;
-  const isUp  = pct >= 0;
-  const arrow = isUp ? '▲' : '▼';
-  const cls   = isUp ? 'text-success' : 'text-danger';
-  const mes   = MESES[last.month - 1];
+  const pct  = (last.value - prev.value) / prev.value * 100;
+  const isUp = pct >= 0;
+  const cls  = isUp ? 'text-success' : 'text-danger';
+  const mes  = MESES[last.month - 1];
 
   el.innerHTML = `
     <div class="d-flex align-items-center flex-wrap gap-3">
       <div class="termometro-badge ${isUp ? 'bg-success-subtle' : 'bg-danger-subtle'} rounded-3 px-3 py-2 text-center">
-        <span class="${cls} fs-3 fw-bold d-block">${arrow} ${Math.abs(pct).toFixed(1)}%</span>
+        <span class="${cls} fs-3 fw-bold d-block">${isUp ? '▲' : '▼'} ${Math.abs(pct).toFixed(1)}%</span>
         <small class="${cls}">vs ${mes} ${last.year - 1}</small>
       </div>
       <div>
         <div class="fw-semibold">Pernoctaciones — ${mes} ${last.year}</div>
         <div class="text-muted small">
-          ${fmtNum(last.value)} este año
-          &nbsp;·&nbsp;
-          ${fmtNum(prev.value)} el año anterior
-          &nbsp;·&nbsp;
-          diferencia: ${fmtNum(last.value - prev.value)}
+          ${fmtNum(last.value)} este año &nbsp;·&nbsp; ${fmtNum(prev.value)} el año anterior &nbsp;·&nbsp; diferencia: ${fmtNum(last.value - prev.value)}
         </div>
       </div>
     </div>`;
@@ -208,10 +287,22 @@ function updateTermometro(pernoctaciones) {
 
 // ── Main entry point ────────────────────────────────────────────────────────
 
-function renderDashboard(viajeros, pernoctaciones, ocupacion) {
+function renderDashboard(munData, compName, compData) {
   _destroyAll();
-  updateStatCards(viajeros, pernoctaciones, ocupacion);
-  updateTermometro(pernoctaciones);
-  renderLineChart('chart-line', pernoctaciones, 'Pernoctaciones — evolución mensual');
-  renderBarChart('chart-bar',  viajeros,       'Viajeros — comparativa mensual');
+  updateStatCards(munData.viajeros, munData.pernoctaciones, munData.nacionales, munData.extranjeros);
+  updateTermometro(munData.pernoctaciones);
+  renderLineChart('chart-line',  munData.pernoctaciones, 'Pernoctaciones — evolución mensual');
+  renderBarChart('chart-bar',    munData.viajeros,       'Viajeros — comparativa mensual');
+  renderDonutChart('chart-donut', munData.nacionales, munData.extranjeros);
+
+  const compSection = document.getElementById('section-comparison');
+  if (compName && compData && compData.pernoctaciones.length) {
+    renderComparisonChart('chart-comparison',
+      document.getElementById('dash-title').textContent, munData.pernoctaciones,
+      compName, compData.pernoctaciones
+    );
+    compSection?.classList.remove('d-none');
+  } else {
+    compSection?.classList.add('d-none');
+  }
 }
