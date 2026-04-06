@@ -62,11 +62,16 @@
 
       <!-- Municipio / Punto turístico -->
       <div class="col-sm-6 col-xl-3">
-        <label for="sel-municipio" class="form-label small fw-semibold text-muted mb-1">
+        <label for="input-municipio-search" class="form-label small fw-semibold text-muted mb-1">
           Punto turístico
           <span id="municipios-badge" class="badge bg-secondary fw-normal ms-1 d-none"></span>
         </label>
-        <select id="sel-municipio" class="form-select form-select-sm">
+        <input type="text" id="input-municipio-search"
+               class="form-control form-control-sm mb-1"
+               placeholder="Buscar municipio…"
+               autocomplete="off"
+               disabled />
+        <select id="sel-municipio" class="form-select form-select-sm" size="1">
           <option value="">Cargando puntos turísticos…</option>
         </select>
       </div>
@@ -283,11 +288,15 @@ const SPAIN_GEO = {
 };
 
 // ── DOM refs ──────────────────────────────────────────────────────────────
-const selCCAA     = document.getElementById('sel-ccaa');
-const selProv     = document.getElementById('sel-provincia');
-const selMun      = document.getElementById('sel-municipio');
-const btnVer      = document.getElementById('btn-ver');
-const badgeMun    = document.getElementById('municipios-badge');
+const selCCAA        = document.getElementById('sel-ccaa');
+const selProv        = document.getElementById('sel-provincia');
+const selMun         = document.getElementById('sel-municipio');
+const inputMunSearch = document.getElementById('input-municipio-search');
+const btnVer         = document.getElementById('btn-ver');
+const badgeMun       = document.getElementById('municipios-badge');
+
+// Full sorted list kept in memory for filtering
+let _allLocations = [];
 
 // ── UI state helpers ──────────────────────────────────────────────────────
 const UI_STATES = ['loading', 'error', 'welcome', 'dashboard'];
@@ -343,22 +352,45 @@ selProv.addEventListener('change', checkButtonReady);
 selMun.addEventListener('change', checkButtonReady);
 
 // ── Load municipios from API ───────────────────────────────────────────────
-async function loadMunicipios() {
-  try {
-    const locs = await getAvailableLocations();
-    selMun.innerHTML = '';
+function _populateSelect(locs) {
+  selMun.innerHTML = '';
+  if (!locs.length) {
+    selMun.appendChild(new Option('Sin resultados', ''));
+  } else {
     selMun.appendChild(new Option('— Seleccionar punto turístico —', ''));
     locs.forEach(loc => selMun.appendChild(new Option(loc, loc)));
+  }
+  checkButtonReady();
+}
 
-    badgeMun.textContent = locs.length;
+async function loadMunicipios() {
+  try {
+    _allLocations = await getAvailableLocations();
+
+    badgeMun.textContent = _allLocations.length;
     badgeMun.classList.remove('d-none');
-    checkButtonReady();
+
+    inputMunSearch.disabled = false;
+    inputMunSearch.placeholder = `Buscar entre ${_allLocations.length} municipios…`;
+    _populateSelect(_allLocations);
   } catch (e) {
     console.error('[App] Error cargando puntos turísticos:', e);
     selMun.innerHTML = '';
     selMun.appendChild(new Option('Error al cargar — recarga la página', ''));
   }
 }
+
+// ── Search input → filter select options ──────────────────────────────────
+inputMunSearch.addEventListener('input', () => {
+  const q = inputMunSearch.value.trim().toLowerCase();
+  const filtered = q
+    ? _allLocations.filter(loc => loc.toLowerCase().includes(q))
+    : _allLocations;
+  _populateSelect(filtered);
+  // Auto-select if exactly one result remains
+  if (filtered.length === 1) selMun.value = filtered[0];
+  checkButtonReady();
+});
 
 // ── Ver datos click ───────────────────────────────────────────────────────
 btnVer.addEventListener('click', async () => {
