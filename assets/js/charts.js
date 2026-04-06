@@ -133,18 +133,13 @@ function renderBarChart(canvasId, data, title) {
 // ── Stat cards ──────────────────────────────────────────────────────────────
 
 function updateStatCards(viajeros, pernoctaciones, ocupacion) {
-  // Latest entry with value > 0 (some months may be Secreto=true and were
-  // stripped; walk backwards to find the last real published data point)
-  const lastNonZero = arr => {
-    for (let i = arr.length - 1; i >= 0; i--) {
-      if (arr[i].value > 0) return arr[i];
-    }
-    return arr.length ? arr[arr.length - 1] : null;
-  };
+  // parseSeriesData already filters nulls and zeros, so last entry is the
+  // latest published data point.
+  const last = arr => arr.length ? arr[arr.length - 1] : null;
 
-  const lv = lastNonZero(viajeros);
-  const lp = lastNonZero(pernoctaciones);
-  const lo = lastNonZero(ocupacion);
+  const lv = last(viajeros);
+  const lp = last(pernoctaciones);
+  const lo = last(ocupacion);
 
   document.getElementById('card-viajeros-val').textContent =
     lv ? fmtNum(lv.value) : '—';

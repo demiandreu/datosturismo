@@ -23,35 +23,25 @@ function _extractLocation(nombre) {
   return parts[0] || '';
 }
 
-// INE Periodo field is a Spanish month name: "enero", "febrero", … "diciembre"
-// (not "M01"/"M08" as assumed). Map to 1-12.
-const _MESES_ES = {
-  'enero': 1, 'febrero': 2, 'marzo': 3, 'abril': 4,
-  'mayo': 5, 'junio': 6, 'julio': 7, 'agosto': 8,
-  'septiembre': 9, 'octubre': 10, 'noviembre': 11, 'diciembre': 12,
-};
-
-function _parsePeriodo(p) {
-  const s = String(p).trim().toLowerCase();
-  if (_MESES_ES[s]) return _MESES_ES[s];
-  // Numeric fallback for "M01"–"M12" format (other tables)
-  const n = parseInt(s.replace(/\D/g, ''), 10);
-  return isNaN(n) ? 0 : n;
-}
+// Real INE Data entry format:
+// { Fecha: '2026-02-01T00:00:00.000+01:00', T3_TipoDato: 'Provisional',
+//   T3_Periodo: 'M02', Anyo: 2026, Valor: null }
+// Month comes from T3_Periodo ('M01'–'M12'). Valor can be null for unpublished months.
 
 // Parse and sort a series Data array into {year, month, value} objects.
-// Skips entries with Secreto:true (suppressed by INE) and null Valor.
+// Skips entries where Valor is null or 0.
 function parseSeriesData(series) {
   if (!series?.Data) return [];
-  return series.Data
-    .filter(d => d.Secreto !== true && d.Valor !== null && d.Valor !== undefined)
+  const parsed = series.Data
+    .filter(d => d.Valor !== null && d.Valor !== undefined && d.Valor > 0)
     .map(d => ({
       year:  parseInt(d.Anyo, 10),
-      month: _parsePeriodo(d.Periodo),
+      month: parseInt(String(d.T3_Periodo).replace('M', ''), 10),
       value: parseFloat(d.Valor),
     }))
     .filter(d => !isNaN(d.year) && d.month > 0 && !isNaN(d.value))
     .sort((a, b) => a.year !== b.year ? a.year - b.year : a.month - b.month);
+  return parsed;
 }
 
 // Return sorted list of all "puntos turísticos" found in table 2082
@@ -91,17 +81,13 @@ async function getMunicipioData(municipioName) {
   console.log('  viajeros →', viajerosSeries?.Nombre ?? 'NO ENCONTRADA');
   console.log('  pernoct  →', pernoctSeries?.Nombre  ?? 'NO ENCONTRADA');
 
-  // Log raw Data structure so Anyo/Periodo/Valor/Secreto format is visible
-  if (viajerosSeries?.Data) {
-    console.log('[INE] viajeros Data completo:', viajerosSeries.Data);
-    console.log('[INE] viajeros primer dato (ejemplo):', viajerosSeries.Data[0]);
-  }
+  const viajeros       = parseSeriesData(viajerosSeries);
+  const pernoctaciones = parseSeriesData(pernoctSeries);
 
-  return {
-    raw:            matching,
-    viajeros:       parseSeriesData(viajerosSeries),
-    pernoctaciones: parseSeriesData(pernoctSeries),
-  };
+  console.log('[INE] viajeros parseado:', viajeros);
+  console.log('[INE] pernoctaciones parseado:', pernoctaciones);
+
+  return { raw: matching, viajeros, pernoctaciones };
 }
 
 // Return grado de ocupación data for a province from table 2072
