@@ -13,17 +13,14 @@ async function _fetchTable(tableId) {
   return data;
 }
 
-// INE Nombre format: "Indicator. Location. Qualifier."
-// e.g. "Viajeros. Salou. Total."  →  "Salou"
-//      "Pernoctaciones. Salou. Total." →  "Salou"
-// The location is the segment between the FIRST and LAST dot-separated parts.
-// Falls back to the last non-empty segment if there are only two parts.
+// INE Nombre format: "Location. Indicator. Qualifier."
+// e.g. "Salou. Viajeros. Total."        →  "Salou"
+//      "Cambrils. Pernoctaciones. Total." →  "Cambrils"
+// The location is always the FIRST dot-separated segment.
 function _extractLocation(nombre) {
   if (!nombre) return '';
   const parts = nombre.split('.').map(p => p.trim()).filter(Boolean);
-  if (parts.length >= 3) return parts[1];   // middle segment
-  if (parts.length === 2) return parts[1];  // "Indicator. Location"
-  return parts[0];
+  return parts[0] || '';
 }
 
 // Parse and sort a series Data array into {year, month, value} objects
@@ -43,12 +40,21 @@ function parseSeriesData(series) {
 // Return sorted list of all "puntos turísticos" found in table 2082
 async function getAvailableLocations() {
   const data = await _fetchTable('2082');
+
+  // Diagnostic: log first 10 raw Nombre values so the format is visible in console
+  console.log('[INE] Primeros 10 Nombre de tabla 2082:',
+    data.slice(0, 10).map(s => s.Nombre));
+  console.log('[INE] Ejemplo de extracción (primeros 5):',
+    data.slice(0, 5).map(s => ({ Nombre: s.Nombre, extraído: _extractLocation(s.Nombre) })));
+
   const seen = new Set();
   data.forEach(s => {
     const loc = _extractLocation(s.Nombre);
     if (loc) seen.add(loc);
   });
-  return [...seen].sort((a, b) => a.localeCompare(b, 'es'));
+  const locations = [...seen].sort((a, b) => a.localeCompare(b, 'es'));
+  console.log('[INE] Puntos turísticos encontrados:', locations.length, '— primeros 10:', locations.slice(0, 10));
+  return locations;
 }
 
 // Return viajeros + pernoctaciones data arrays for a given municipio name
@@ -60,10 +66,13 @@ async function getMunicipioData(municipioName) {
     _extractLocation(s.Nombre).toLowerCase() === name
   );
 
-  console.log(`[INE] Series encontradas para "${municipioName}":`, matching.map(s => s.Nombre));
+  const viajerosSeries = matching.find(s => /viajero/i.test(s.Nombre));
+  const pernoctSeries  = matching.find(s => /pernoct/i.test(s.Nombre));
 
-  const viajerosSeries   = matching.find(s => /viajero/i.test(s.Nombre));
-  const pernoctSeries    = matching.find(s => /pernoct/i.test(s.Nombre));
+  console.log(`[INE] getMunicipioData("${municipioName}") — ${matching.length} series encontradas:`);
+  console.log('  Nombres:', matching.map(s => s.Nombre));
+  console.log('  viajeros →', viajerosSeries?.Nombre ?? 'NO ENCONTRADA');
+  console.log('  pernoct  →', pernoctSeries?.Nombre  ?? 'NO ENCONTRADA');
 
   return {
     raw:            matching,
