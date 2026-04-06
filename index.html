@@ -38,28 +38,8 @@
   <div class="container-fluid">
     <div class="row g-2 align-items-end">
 
-      <!-- Comunidad Autónoma -->
-      <div class="col-sm-6 col-xl-3">
-        <label for="sel-ccaa" class="form-label small fw-semibold text-muted mb-1">
-          Comunidad Autónoma
-        </label>
-        <select id="sel-ccaa" class="form-select form-select-sm">
-          <option value="">— Seleccionar —</option>
-        </select>
-      </div>
-
-      <!-- Provincia -->
-      <div class="col-sm-6 col-xl-3">
-        <label for="sel-provincia" class="form-label small fw-semibold text-muted mb-1">
-          Provincia
-        </label>
-        <select id="sel-provincia" class="form-select form-select-sm" disabled>
-          <option value="">— Seleccionar CCAA primero —</option>
-        </select>
-      </div>
-
-      <!-- Municipio / Punto turístico -->
-      <div class="col-sm-6 col-xl-3">
+      <!-- Punto turístico search + select -->
+      <div class="col-sm-8 col-lg-5 col-xl-4">
         <label for="input-municipio-search" class="form-label small fw-semibold text-muted mb-1">
           Punto turístico
           <span id="municipios-badge" class="badge bg-secondary fw-normal ms-1 d-none"></span>
@@ -75,7 +55,7 @@
       </div>
 
       <!-- Botón -->
-      <div class="col-sm-6 col-xl-3">
+      <div class="col-sm-4 col-lg-3 col-xl-2">
         <button id="btn-ver" class="btn btn-primary btn-sm w-100" disabled>
           <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor"
                viewBox="0 0 16 16" class="me-1" aria-hidden="true">
@@ -262,36 +242,12 @@
 <script>
 'use strict';
 
-// ── Geography data ────────────────────────────────────────────────────────
-const SPAIN_GEO = {
-  'Andalucía':                   ['Almería','Cádiz','Córdoba','Granada','Huelva','Jaén','Málaga','Sevilla'],
-  'Aragón':                      ['Huesca','Teruel','Zaragoza'],
-  'Principado de Asturias':      ['Asturias'],
-  'Illes Balears':               ['Illes Balears'],
-  'Canarias':                    ['Las Palmas','Santa Cruz de Tenerife'],
-  'Cantabria':                   ['Cantabria'],
-  'Castilla-La Mancha':          ['Albacete','Ciudad Real','Cuenca','Guadalajara','Toledo'],
-  'Castilla y León':             ['Ávila','Burgos','León','Palencia','Salamanca','Segovia','Soria','Valladolid','Zamora'],
-  'Cataluña':                    ['Barcelona','Girona','Lleida','Tarragona'],
-  'Extremadura':                 ['Badajoz','Cáceres'],
-  'Galicia':                     ['A Coruña','Lugo','Ourense','Pontevedra'],
-  'La Rioja':                    ['La Rioja'],
-  'Comunidad de Madrid':         ['Madrid'],
-  'Región de Murcia':            ['Murcia'],
-  'Comunidad Foral de Navarra':  ['Navarra'],
-  'País Vasco':                  ['Álava','Gipuzkoa','Bizkaia'],
-  'Comunitat Valenciana':        ['Alicante/Alacant','Castellón/Castelló','Valencia/València'],
-};
-
 // ── DOM refs ──────────────────────────────────────────────────────────────
-const selCCAA        = document.getElementById('sel-ccaa');
-const selProv        = document.getElementById('sel-provincia');
 const selMun         = document.getElementById('sel-municipio');
 const inputMunSearch = document.getElementById('input-municipio-search');
 const btnVer         = document.getElementById('btn-ver');
 const badgeMun       = document.getElementById('municipios-badge');
 
-// Full sorted list kept in memory for filtering
 let _allLocations = [];
 
 // ── UI state helpers ──────────────────────────────────────────────────────
@@ -302,61 +258,14 @@ function showState(state) {
     const el = document.getElementById(`ui-${s}`);
     if (el) el.classList.toggle('d-none', s !== state);
   });
-  // loading spinner needs flex display
   if (state === 'loading') {
     document.getElementById('ui-loading').style.display = 'flex';
   }
 }
 
-function setLoadingMsg(msg) {
-  const el = document.getElementById('loading-msg');
-  if (el) el.textContent = msg;
-}
-
-function setErrorMsg(msg) {
-  const el = document.getElementById('error-msg-text');
-  if (el) el.textContent = msg;
-}
-
-function checkButtonReady() {
-  btnVer.disabled = !selMun.value;
-}
-
-// ── Populate CCAA dropdown ────────────────────────────────────────────────
-function populateCCAA() {
-  Object.keys(SPAIN_GEO).sort((a, b) => a.localeCompare(b, 'es')).forEach(ccaa => {
-    selCCAA.appendChild(new Option(ccaa, ccaa));
-  });
-}
-
-// Filter by text search only; province/CCAA dropdowns are visual context.
-function _applyFilters() {
-  const q    = inputMunSearch.value.trim().toLowerCase();
-  const list = q ? _allLocations.filter(loc => loc.toLowerCase().includes(q)) : _allLocations;
-  _populateSelect(list);
-  if (list.length === 1) selMun.value = list[0];
-  checkButtonReady();
-}
-
-// ── CCAA → Province cascade ───────────────────────────────────────────────
-selCCAA.addEventListener('change', () => {
-  const ccaa = selCCAA.value;
-  selProv.innerHTML = '';
-  selProv.appendChild(new Option('— Seleccionar provincia —', ''));
-
-  if (ccaa && SPAIN_GEO[ccaa]) {
-    SPAIN_GEO[ccaa].forEach(prov => selProv.appendChild(new Option(prov, prov)));
-    selProv.disabled = false;
-  } else {
-    selProv.disabled = true;
-  }
-  // Reset municipio list to all when CCAA changes
-  inputMunSearch.value = '';
-  _populateSelect(_allLocations);
-  checkButtonReady();
-});
-
-selProv.addEventListener('change', checkButtonReady);
+function setLoadingMsg(msg) { document.getElementById('loading-msg').textContent = msg; }
+function setErrorMsg(msg)   { document.getElementById('error-msg-text').textContent = msg; }
+function checkButtonReady() { btnVer.disabled = !selMun.value; }
 
 selMun.addEventListener('change', checkButtonReady);
 
@@ -389,15 +298,18 @@ async function loadMunicipios() {
   }
 }
 
-// ── Search input → filter select options ──────────────────────────────────
-inputMunSearch.addEventListener('input', _applyFilters);
+// ── Search input → filter select ──────────────────────────────────────────
+inputMunSearch.addEventListener('input', () => {
+  const q    = inputMunSearch.value.trim().toLowerCase();
+  const list = q ? _allLocations.filter(loc => loc.toLowerCase().includes(q)) : _allLocations;
+  _populateSelect(list);
+  if (list.length === 1) selMun.value = list[0];
+  checkButtonReady();
+});
 
 // ── Ver datos click ───────────────────────────────────────────────────────
 btnVer.addEventListener('click', async () => {
   const municipio = selMun.value;
-  const provincia = selProv.value;
-  const ccaa      = selCCAA.value;
-
   if (!municipio) return;
 
   showState('loading');
@@ -405,28 +317,16 @@ btnVer.addEventListener('click', async () => {
   btnVer.disabled = true;
 
   try {
-    const [munData, ocupData] = await Promise.all([
-      getMunicipioData(municipio),
-      provincia ? getOcupacionData(provincia) : Promise.resolve([]),
-    ]);
+    const munData = await getMunicipioData(municipio);
 
-    // Header
-    document.getElementById('dash-title').textContent = municipio;
-    document.getElementById('dash-subtitle').textContent =
-      [provincia, ccaa].filter(Boolean).join(' · ') || 'España';
+    document.getElementById('dash-title').textContent    = municipio;
+    document.getElementById('dash-subtitle').textContent = 'Apartamentos turísticos · INE EOA';
 
-    // Show/hide no-data warning
     const hasData = munData.viajeros.length || munData.pernoctaciones.length;
     document.getElementById('no-data-msg').classList.toggle('d-none', !!hasData);
 
     showState('dashboard');
-
-    if (hasData) {
-      renderDashboard(munData.viajeros, munData.pernoctaciones, ocupData);
-    } else {
-      // Still update cards so they show "—"
-      renderDashboard([], [], ocupData);
-    }
+    renderDashboard(munData.viajeros, munData.pernoctaciones, []);
 
   } catch (e) {
     console.error('[App] Error cargando datos:', e);
@@ -439,10 +339,7 @@ btnVer.addEventListener('click', async () => {
 
 // ── Init ──────────────────────────────────────────────────────────────────
 (async function init() {
-  populateCCAA();
   showState('welcome');
-
-  // Load municipios + warm ocupación cache in parallel
   await Promise.allSettled([loadMunicipios(), prefetchAll()]);
 })();
 </script>
