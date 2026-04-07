@@ -2,26 +2,26 @@
 
 const MESES = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
 
-// Named colours for the three most-recent years; older years fall back to EXTRA_COLORS
+// Named colours for years 2016-2025; older years fall back to EXTRA_COLORS
 const YEAR_COLORS = {
-  2023: { line: '#9E9E9E', bar: 'rgba(158,158,158,0.60)', border: '#757575' },
-  2024: { line: '#1976D2', bar: 'rgba(25,118,210,0.70)',  border: '#1565C0' },
-  2025: { line: '#2E7D32', bar: 'rgba(46,125,50,0.80)',   border: '#1B5E20' },
+  2016: { line: '#E53935', bar: 'rgba(229,57,53,0.65)',   border: '#C62828' },
+  2017: { line: '#FB8C00', bar: 'rgba(251,140,0,0.65)',   border: '#E65100' },
+  2018: { line: '#FDD835', bar: 'rgba(253,216,53,0.70)',  border: '#F9A825' },
+  2019: { line: '#43A047', bar: 'rgba(67,160,71,0.65)',   border: '#2E7D32' },
+  2020: { line: '#00ACC1', bar: 'rgba(0,172,193,0.65)',   border: '#00838F' },
+  2021: { line: '#1E88E5', bar: 'rgba(30,136,229,0.65)',  border: '#1565C0' },
+  2022: { line: '#5E35B1', bar: 'rgba(94,53,177,0.65)',   border: '#4527A0' },
+  2023: { line: '#8E24AA', bar: 'rgba(142,36,170,0.65)',  border: '#6A1B9A' },
+  2024: { line: '#00897B', bar: 'rgba(0,137,123,0.65)',   border: '#00695C' },
+  2025: { line: '#F4511E', bar: 'rgba(244,81,30,0.75)',   border: '#BF360C' },
 };
 const EXTRA_COLORS = [
-  { line: '#E53935', bar: 'rgba(229,57,53,0.60)',  border: '#C62828' },
-  { line: '#F57C00', bar: 'rgba(245,124,0,0.60)',  border: '#E65100' },
-  { line: '#6A1B9A', bar: 'rgba(106,27,154,0.60)', border: '#4A148C' },
+  { line: '#546E7A', bar: 'rgba(84,110,122,0.60)', border: '#37474F' },
 ];
-const _extraIdx = yr => Object.keys(YEAR_COLORS).indexOf(String(yr)) === -1
-  ? EXTRA_COLORS[parseInt(yr, 10) % EXTRA_COLORS.length]
-  : null;
-const _color = yr => YEAR_COLORS[yr] ?? _extraIdx(yr) ?? EXTRA_COLORS[0];
+const _color = yr => YEAR_COLORS[yr] ?? EXTRA_COLORS[0];
 
-// Raw data keyed by canvasId, for toggle re-render
-const _chartStore = {};
-
-const _activeCharts = {};
+const DEFAULT_LINE_YEARS = ['2016','2017','2018','2019','2020','2021','2022','2023','2024','2025'];
+const DEFAULT_BAR_YEARS  = ['2024', '2025'];const _activeCharts = {};
 
 function _destroy(id) {
   if (_activeCharts[id]) { _activeCharts[id].destroy(); delete _activeCharts[id]; }
@@ -68,9 +68,6 @@ function renderLineChart(canvasId, data, title) {
   _drawLineChart(canvasId, ctx);
   _ensureLineToggle(canvasId, ctx);
 }
-
-const DEFAULT_LINE_YEARS = ['2023', '2024', '2025'];
-const DEFAULT_BAR_YEARS  = ['2024', '2025'];
 
 function _defaultYears(allYears, wanted) {
   const filtered = allYears.filter(y => wanted.includes(y));
