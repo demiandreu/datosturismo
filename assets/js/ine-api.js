@@ -108,6 +108,33 @@ async function getMunicipioData(municipioName) {
   return { viajeros, pernoctaciones, nacionales, extranjeros };
 }
 
+// Returns [{municipio, year, month, value}] for the top N municipios by
+// pernoctaciones totales in the latest month available across all municipios.
+async function getTop10(n = 10) {
+  const rows = await _loadCSV();
+
+  // Find the latest month present in pernoctaciones data
+  const perRows = rows.filter(r => /pernoct/i.test(r.indicador));
+  if (!perRows.length) return [];
+
+  const latest = perRows.reduce((best, r) =>
+    r.year > best.year || (r.year === best.year && r.month > best.month) ? r : best
+  , perRows[0]);
+  const { year, month } = latest;
+
+  // Sum both residencias per municipio for that month
+  const map = {};
+  for (const r of perRows) {
+    if (r.year !== year || r.month !== month) continue;
+    map[r.municipio] = (map[r.municipio] ?? 0) + r.value;
+  }
+
+  return Object.entries(map)
+    .map(([municipio, value]) => ({ municipio, year, month, value }))
+    .sort((a, b) => b.value - a.value)
+    .slice(0, n);
+}
+
 // Warm the cache on page load so the first Ver datos click is instant
 async function prefetchAll() {
   await _loadCSV().catch(e => console.warn('[INE] Prefetch fallido:', e.message));

@@ -273,6 +273,17 @@
 
 </main>
 
+<!-- ── Top 10 ─────────────────────────────────────────────────────────── -->
+<section class="container-fluid px-4 mt-5 mb-5" id="section-top10">
+  <div class="card border-0 shadow-sm">
+    <div class="card-body">
+      <h5 class="fw-bold mb-1" id="top10-title">Top 10 destinos más visitados</h5>
+      <p class="text-muted small mb-3" id="top10-subtitle">Cargando…</p>
+      <canvas id="chart-top10" height="320"></canvas>
+    </div>
+  </div>
+</section>
+
 <!-- ── Footer ────────────────────────────────────────────────────────────── -->
 <footer class="bg-white border-top mt-5 py-3">
   <div class="container-fluid">
@@ -388,10 +399,28 @@ btnVer.addEventListener('click', async () => {
   }
 });
 
+// ── Top 10 auto-load ──────────────────────────────────────────────────────
+async function loadTop10() {
+  try {
+    const top10 = await getTop10();
+    if (!top10.length) return;
+    const { year, month } = top10[0];
+    const mes = ['Enero','Febrero','Marzo','Abril','Mayo','Junio',
+                 'Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'][month - 1];
+    document.getElementById('top10-subtitle').textContent =
+      `Pernoctaciones totales · ${mes} ${year} · Fuente: INE EOA`;
+    renderTop10Chart('chart-top10', top10);
+  } catch (e) {
+    console.warn('[App] Top 10 no disponible:', e.message);
+    document.getElementById('top10-subtitle').textContent = 'No disponible';
+  }
+}
+
 // ── Init ──────────────────────────────────────────────────────────────────
 (async function init() {
   showState('welcome');
   await Promise.allSettled([loadMunicipios(), prefetchAll()]);
+  loadTop10();
 })();
 </script>
 
