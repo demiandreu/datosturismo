@@ -21,7 +21,10 @@ const EXTRA_COLORS = [
 const _color = yr => YEAR_COLORS[yr] ?? EXTRA_COLORS[0];
 
 const DEFAULT_LINE_YEARS = ['2016','2017','2018','2019','2020','2021','2022','2023','2024','2025'];
-const DEFAULT_BAR_YEARS  = ['2024', '2025'];const _activeCharts = {};
+const DEFAULT_BAR_YEARS  = ['2024', '2025'];
+
+const _chartStore   = {};   // stores data per canvasId for toggle re-render
+const _activeCharts = {};
 
 function _destroy(id) {
   if (_activeCharts[id]) { _activeCharts[id].destroy(); delete _activeCharts[id]; }
