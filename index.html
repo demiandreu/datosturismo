@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>DatosTurismo.es — Estadísticas de turismo en España</title>
-  <meta name="description" content="Consulta estadísticas de turismo en España por municipio: viajeros, pernoctaciones y grado de ocupación. Datos del INE actualizados mensualmente." />
+  <meta name="description" content="Consulta estadísticas de turismo en España por municipio: viajeros, noches de estancia y grado de ocupación. Datos del INE actualizados mensualmente." />
 
   <link rel="stylesheet"
     href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" />
@@ -30,6 +30,12 @@
     <span class="navbar-text text-white-50 d-none d-md-block small">
       Estadísticas de turismo en España &middot; Fuente: INE
     </span>
+    <select id="lang-select" class="form-select form-select-sm ms-auto" style="width:auto;max-width:7rem;background-color:rgba(255,255,255,.15);color:#fff;border-color:rgba(255,255,255,.3)">
+      <option value="es">🇪🇸 ES</option>
+      <option value="en">🇬🇧 EN</option>
+      <option value="de">🇩🇪 DE</option>
+      <option value="fr">🇫🇷 FR</option>
+    </select>
   </div>
 </nav>
 
@@ -65,7 +71,7 @@
       <!-- Punto turístico search + select -->
       <div class="col-sm-8 col-lg-5 col-xl-4">
         <label for="input-municipio-search" class="form-label small fw-semibold text-muted mb-1">
-          Punto turístico
+          <span data-i18n="punto_turistico">Punto turístico</span>
           <span id="municipios-badge" class="badge bg-secondary fw-normal ms-1 d-none"></span>
         </label>
         <input type="text" id="input-municipio-search"
@@ -87,7 +93,7 @@
                      8.692V13.5a.5.5 0 0 1-.342.474l-3 1A.5.5 0 0 1 6 14.5V8.692L1.628
                      3.834A.5.5 0 0 1 1.5 3.5v-2z"/>
           </svg>
-          Ver datos
+          <span data-i18n="ver_datos">Ver datos</span>
         </button>
       </div>
 
@@ -139,7 +145,7 @@
       </p>
       <div class="d-flex flex-wrap justify-content-center gap-2">
         <span class="badge bg-primary-subtle text-primary-emphasis border border-primary-subtle fw-normal px-3 py-2">Viajeros</span>
-        <span class="badge bg-primary-subtle text-primary-emphasis border border-primary-subtle fw-normal px-3 py-2">Pernoctaciones</span>
+        <span class="badge bg-primary-subtle text-primary-emphasis border border-primary-subtle fw-normal px-3 py-2">Noches de estancia</span>
         <span class="badge bg-primary-subtle text-primary-emphasis border border-primary-subtle fw-normal px-3 py-2">Grado de ocupación</span>
         <span class="badge bg-primary-subtle text-primary-emphasis border border-primary-subtle fw-normal px-3 py-2">Variación interanual</span>
       </div>
@@ -172,7 +178,7 @@
           <div class="card-body d-flex align-items-start gap-3">
             <div class="stat-card-icon bg-primary-subtle text-primary">🧳</div>
             <div>
-              <p class="text-muted small mb-1">Viajeros (último mes)</p>
+              <p class="text-muted small mb-1" data-i18n="viajeros_ultimo_mes">Viajeros (último mes)</p>
               <h3 class="fw-bold text-primary mb-0" id="card-viajeros-val">—</h3>
               <small class="text-muted" id="card-viajeros-sub">—</small>
             </div>
@@ -185,7 +191,7 @@
           <div class="card-body d-flex align-items-start gap-3">
             <div class="stat-card-icon bg-primary-subtle text-primary">🌙</div>
             <div>
-              <p class="text-muted small mb-1">Pernoctaciones (último mes)</p>
+              <p class="text-muted small mb-1" data-i18n="noches_ultimo_mes">Noches de estancia (último mes)</p>
               <h3 class="fw-bold text-primary mb-0" id="card-pernoct-val">—</h3>
               <small class="text-muted" id="card-pernoct-sub">—</small>
             </div>
@@ -198,7 +204,7 @@
           <div class="card-body d-flex align-items-start gap-3">
             <div class="stat-card-icon bg-success-subtle text-success">🛏️</div>
             <div>
-              <p class="text-muted small mb-1">Estancia media (último mes)</p>
+              <p class="text-muted small mb-1" data-i18n="estancia_media">Estancia media (último mes)</p>
               <h3 class="fw-bold text-success mb-0" id="card-estancia-val">—</h3>
               <small class="text-muted" id="card-estancia-sub">—</small>
             </div>
@@ -227,7 +233,7 @@
     <div class="card border-0 shadow-sm mb-4">
       <div class="card-body">
         <h6 class="text-muted fw-semibold mb-3">
-          Variación interanual — pernoctaciones
+          <span data-i18n="variacion_interanual">Variación interanual — noches de estancia</span>
         </h6>
         <div id="termometro-content">—</div>
       </div>
@@ -270,7 +276,7 @@
           <div class="card-body d-flex align-items-start gap-3">
             <div class="stat-card-icon bg-primary-subtle text-primary">🇪🇸</div>
             <div>
-              <p class="text-muted small mb-1">Viajeros nacionales (último mes)</p>
+              <p class="text-muted small mb-1" data-i18n="viajeros_nacionales">Viajeros nacionales (último mes)</p>
               <h3 class="fw-bold text-primary mb-0" id="card-nac-val">—</h3>
               <small class="text-muted" id="card-nac-sub">—</small>
             </div>
@@ -280,7 +286,7 @@
           <div class="card-body d-flex align-items-start gap-3">
             <div class="stat-card-icon bg-warning-subtle text-warning">✈️</div>
             <div>
-              <p class="text-muted small mb-1">Viajeros extranjeros (último mes)</p>
+              <p class="text-muted small mb-1" data-i18n="viajeros_extranjeros">Viajeros extranjeros (último mes)</p>
               <h3 class="fw-bold text-warning mb-0" id="card-ext-val">—</h3>
               <small class="text-muted" id="card-ext-sub">—</small>
             </div>
@@ -293,7 +299,7 @@
     <!-- No data fallback -->
     <div id="no-data-msg" class="d-none mt-4">
       <div class="alert alert-warning mb-0">
-        <strong>Sin datos de viajeros ni pernoctaciones</strong> para este punto turístico
+        <strong>Sin datos de viajeros ni noches de estancia</strong> para este punto turístico
         en las últimas 24 observaciones. Prueba con otro municipio.
       </div>
     </div>
@@ -306,7 +312,7 @@
 <section class="container-fluid px-4 mt-2 mb-5" id="section-top10">
   <div class="card border-0 shadow-sm">
     <div class="card-body">
-      <h5 class="fw-bold mb-1" id="top10-title">Top 10 destinos más visitados</h5>
+      <h5 class="fw-bold mb-1" id="top10-title" data-i18n="top10_titulo">Top 10 destinos más visitados</h5>
       <p class="text-muted small mb-3" id="top10-subtitle">Cargando…</p>
       <canvas id="chart-top10" height="320"></canvas>
     </div>
@@ -345,7 +351,7 @@
           <div class="card-body d-flex align-items-start gap-3">
             <div class="stat-card-icon bg-primary-subtle text-primary">🌙</div>
             <div>
-              <p class="text-muted small mb-1">Pernoctaciones totales</p>
+              <p class="text-muted small mb-1" data-i18n="noches_totales">Noches de estancia totales</p>
               <h3 class="fw-bold text-primary mb-0" id="nac-pernoct-val">—</h3>
               <small class="text-muted" id="nac-pernoct-sub">—</small>
             </div>
@@ -544,7 +550,7 @@ async function loadMunicipios() {
     badgeMun.textContent = _allLocations.length;
     badgeMun.classList.remove('d-none');
     inputMunSearch.disabled = false;
-    inputMunSearch.placeholder = `Buscar entre ${_allLocations.length} municipios…`;
+    inputMunSearch.placeholder = t('buscar_placeholder', _allLocations.length);
     _populateSelect(_allLocations);
   } catch (e) {
     console.error('[App] Error cargando puntos turísticos:', e);
@@ -597,7 +603,7 @@ async function loadTop10() {
     if (!top10.length) return;
     const { year, month } = top10[0];
     document.getElementById('top10-subtitle').textContent =
-      `Pernoctaciones totales · ${MESES_LARGO[month - 1]} ${year} · Fuente: INE EOA`;
+      `Noches de estancia · ${MESES_LARGO[month - 1]} ${year} · Fuente: INE EOA`;
     renderTop10Chart('chart-top10', top10);
   } catch (e) {
     console.warn('[App] Top 10 no disponible:', e.message);
@@ -685,6 +691,119 @@ async function refreshFrontur(ccaa) {
   renderPaisesDonutChart('chart-paises-donut', topPaises);
   renderPaisesTrendChart('chart-paises-trend', top5Trend);
 }
+
+// ── Translations ──────────────────────────────────────────────────────────
+const TRANSLATIONS = {
+  es: {
+    punto_turistico:      'Punto turístico',
+    buscar_placeholder:   n => `Buscar entre ${n} municipios…`,
+    ver_datos:            'Ver datos',
+    viajeros_ultimo_mes:  'Viajeros (último mes)',
+    noches_ultimo_mes:    'Noches de estancia (último mes)',
+    noches_totales:       'Noches de estancia totales',
+    estancia_media:       'Estancia media (último mes)',
+    variacion_interanual: 'Variación interanual — noches de estancia',
+    top10_titulo:         'Top 10 destinos más visitados',
+    viajeros_nacionales:  'Viajeros nacionales (último mes)',
+    viajeros_extranjeros: 'Viajeros extranjeros (último mes)',
+    intern_alta:          'Alta internacionalización',
+    intern_media:         'Internacionalización media',
+    intern_baja:          'Baja internacionalización',
+    meses: ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'],
+    meses_largo: ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'],
+    nacionales:  'Nacionales',
+    extranjeros: 'Extranjeros',
+    sin_datos:   'Sin datos',
+  },
+  en: {
+    punto_turistico:      'Tourist destination',
+    buscar_placeholder:   n => `Search among ${n} destinations…`,
+    ver_datos:            'View data',
+    viajeros_ultimo_mes:  'Visitors (last month)',
+    noches_ultimo_mes:    'Nights stayed (last month)',
+    noches_totales:       'Total nights stayed',
+    estancia_media:       'Average stay (last month)',
+    variacion_interanual: 'Year-over-year change — nights stayed',
+    top10_titulo:         'Top 10 most visited destinations',
+    viajeros_nacionales:  'Domestic visitors (last month)',
+    viajeros_extranjeros: 'Foreign visitors (last month)',
+    intern_alta:          'High internationalisation',
+    intern_media:         'Medium internationalisation',
+    intern_baja:          'Low internationalisation',
+    meses: ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'],
+    meses_largo: ['January','February','March','April','May','June','July','August','September','October','November','December'],
+    nacionales:  'Domestic',
+    extranjeros: 'Foreign',
+    sin_datos:   'No data',
+  },
+  de: {
+    punto_turistico:      'Reiseziel',
+    buscar_placeholder:   n => `Unter ${n} Reisezielen suchen…`,
+    ver_datos:            'Daten anzeigen',
+    viajeros_ultimo_mes:  'Reisende (letzter Monat)',
+    noches_ultimo_mes:    'Übernachtungen (letzter Monat)',
+    noches_totales:       'Übernachtungen gesamt',
+    estancia_media:       'Durchschnittlicher Aufenthalt',
+    variacion_interanual: 'Jahresvergleich — Übernachtungen',
+    top10_titulo:         'Top 10 meistbesuchte Reiseziele',
+    viajeros_nacionales:  'Inländische Reisende (letzter Monat)',
+    viajeros_extranjeros: 'Ausländische Reisende (letzter Monat)',
+    intern_alta:          'Hohe Internationalität',
+    intern_media:         'Mittlere Internationalität',
+    intern_baja:          'Geringe Internationalität',
+    meses: ['Jan','Feb','Mär','Apr','Mai','Jun','Jul','Aug','Sep','Okt','Nov','Dez'],
+    meses_largo: ['Januar','Februar','März','April','Mai','Juni','Juli','August','September','Oktober','November','Dezember'],
+    nacionales:  'Inländisch',
+    extranjeros: 'Ausländisch',
+    sin_datos:   'Keine Daten',
+  },
+  fr: {
+    punto_turistico:      'Destination touristique',
+    buscar_placeholder:   n => `Rechercher parmi ${n} destinations…`,
+    ver_datos:            'Voir les données',
+    viajeros_ultimo_mes:  'Voyageurs (dernier mois)',
+    noches_ultimo_mes:    'Nuitées (dernier mois)',
+    noches_totales:       'Total des nuitées',
+    estancia_media:       'Durée moyenne du séjour',
+    variacion_interanual: 'Variation annuelle — nuitées',
+    top10_titulo:         'Top 10 des destinations les plus visitées',
+    viajeros_nacionales:  'Voyageurs nationaux (dernier mois)',
+    viajeros_extranjeros: 'Voyageurs étrangers (dernier mois)',
+    intern_alta:          'Forte internationalisation',
+    intern_media:         'Internationalisation moyenne',
+    intern_baja:          'Faible internationalisation',
+    meses: ['Jan','Fév','Mar','Avr','Mai','Jun','Jul','Aoû','Sep','Oct','Nov','Déc'],
+    meses_largo: ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'],
+    nacionales:  'Nationaux',
+    extranjeros: 'Étrangers',
+    sin_datos:   'Sans données',
+  },
+};
+
+let _lang = 'es';
+
+function t(key, ...args) {
+  const v = TRANSLATIONS[_lang]?.[key] ?? TRANSLATIONS.es[key];
+  return typeof v === 'function' ? v(...args) : (v ?? key);
+}
+
+window._t = (...a) => t(...a);   // expose to charts.js
+
+function applyTranslations() {
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const key = el.dataset.i18n;
+    el.textContent = t(key);
+  });
+  // Update search placeholder if municipios are loaded
+  if (_allLocations.length) {
+    inputMunSearch.placeholder = t('buscar_placeholder', _allLocations.length);
+  }
+}
+
+document.getElementById('lang-select').addEventListener('change', e => {
+  _lang = e.target.value;
+  applyTranslations();
+});
 
 // ── Init ──────────────────────────────────────────────────────────────────
 (async function init() {

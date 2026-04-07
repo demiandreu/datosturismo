@@ -220,7 +220,7 @@ function renderComparisonChart(canvasId, name1, data1, name2, data2) {
         { label: name2, data: toArr(data2), borderColor: '#dc3545', backgroundColor: 'rgba(220,53,69,0.08)',  borderWidth: 2.5, tension: 0.35, pointRadius: 3, fill: false },
       ],
     },
-    options: _lineOpts('Comparativa pernoctaciones'),
+    options: _lineOpts('Comparativa noches de estancia'),
   });
 }
 
@@ -240,7 +240,7 @@ function renderTop10Chart(canvasId, top10) {
     data: {
       labels: top10.map(d => d.municipio),
       datasets: [{
-        label: 'Pernoctaciones',
+        label: 'Noches de estancia',
         data: top10.map(d => d.value),
         backgroundColor: top10.map((_, i) => i === 0 ? 'rgba(13,110,253,0.85)' : 'rgba(13,110,253,0.55)'),
         borderColor: '#0d6efd',
@@ -252,7 +252,7 @@ function renderTop10Chart(canvasId, top10) {
       responsive: true,
       plugins: {
         legend: { display: false },
-        title:  { display: true, text: `Top 10 por pernoctaciones — ${MESES[month - 1]} ${year}`, font: { size: 13 } },
+        title:  { display: true, text: `Top 10 por noches de estancia — ${MESES[month - 1]} ${year}`, font: { size: 13 } },
         tooltip: { callbacks: { label: c => ` ${fmtNum(c.parsed.x)}` } },
       },
       scales: { x: { beginAtZero: true, ticks: { callback: _axisFormatter } } },
@@ -370,10 +370,11 @@ function _updateIndiceIntern(nacionales, extranjeros, setText) {
 
   const badge = document.getElementById('card-intern-badge');
   if (badge) {
-    const [cls, label] =
-      pct >= 50 ? ['bg-success text-white', 'Alta internacionalización'] :
-      pct >= 30 ? ['bg-warning text-dark',  'Internacionalización media'] :
-                  ['bg-danger text-white',   'Baja internacionalización'];
+    const tr = window._t ?? (k => k);
+  const [cls, label] =
+      pct >= 50 ? ['bg-success text-white', tr('intern_alta')] :
+      pct >= 30 ? ['bg-warning text-dark',  tr('intern_media')] :
+                  ['bg-danger text-white',   tr('intern_baja')];
     badge.innerHTML = `<span class="badge rounded-pill fs-6 px-3 py-2 ${cls}">${label}</span>`;
   }
 }
@@ -385,7 +386,7 @@ function updateTermometro(pernoctaciones) {
   if (!el) return;
 
   if (!pernoctaciones?.length) {
-    el.innerHTML = '<span class="text-muted">Sin datos de pernoctaciones.</span>';
+    el.innerHTML = '<span class="text-muted">Sin datos de noches de estancia.</span>';
     return;
   }
 
@@ -393,7 +394,7 @@ function updateTermometro(pernoctaciones) {
   const prev = pernoctaciones.find(d => d.year === last.year - 1 && d.month === last.month);
 
   if (!prev || prev.value === 0) {
-    el.innerHTML = `<span class="text-muted">Último dato: ${fmtNum(last.value)} pernoctaciones (${MESES[last.month - 1]} ${last.year}). Sin dato del año anterior para comparar.</span>`;
+    el.innerHTML = `<span class="text-muted">Último dato: ${fmtNum(last.value)} noches de estancia (${MESES[last.month - 1]} ${last.year}). Sin dato del año anterior para comparar.</span>`;
     return;
   }
 
@@ -409,7 +410,7 @@ function updateTermometro(pernoctaciones) {
         <small class="${cls}">vs ${mes} ${last.year - 1}</small>
       </div>
       <div>
-        <div class="fw-semibold">Pernoctaciones — ${mes} ${last.year}</div>
+        <div class="fw-semibold">Noches de estancia — ${mes} ${last.year}</div>
         <div class="text-muted small">
           ${fmtNum(last.value)} este año &nbsp;·&nbsp; ${fmtNum(prev.value)} el año anterior &nbsp;·&nbsp; diferencia: ${fmtNum(last.value - prev.value)}
         </div>
@@ -430,7 +431,7 @@ function renderCCAAChart(canvasId, data) {
     data: {
       labels: data.map(d => d.ccaa),
       datasets: [{
-        label: 'Pernoctaciones',
+        label: 'Noches de estancia',
         data:  data.map(d => d.value),
         backgroundColor: data.map((_, i) => i === 0 ? 'rgba(13,110,253,0.85)' : 'rgba(13,110,253,0.50)'),
         borderColor: '#0d6efd',
@@ -442,7 +443,7 @@ function renderCCAAChart(canvasId, data) {
       responsive: true,
       plugins: {
         legend: { display: false },
-        title:  { display: true, text: `Pernoctaciones por CCAA — ${MESES[month - 1]} ${year}`, font: { size: 13 } },
+        title:  { display: true, text: `Noches de estancia por CCAA — ${MESES[month - 1]} ${year}`, font: { size: 13 } },
         tooltip: { callbacks: { label: c => ` ${fmtNum(c.parsed.x)}` } },
       },
       scales: { x: { beginAtZero: true, ticks: { callback: _axisFormatter } } },
@@ -474,7 +475,7 @@ function renderNacionalTrendChart(canvasId, data) {
         };
       }),
     },
-    options: _lineOpts('Pernoctaciones totales España — evolución anual'),
+    options: _lineOpts('Noches de estancia totales España — evolución anual'),
   });
 }
 
@@ -550,7 +551,7 @@ function renderDashboard(munData, compName, compData) {
   _destroyAll();
   updateStatCards(munData.viajeros, munData.pernoctaciones, munData.nacionales, munData.extranjeros);
   updateTermometro(munData.pernoctaciones);
-  renderLineChart('chart-line',  munData.pernoctaciones, 'Pernoctaciones — evolución mensual');
+  renderLineChart('chart-line',  munData.pernoctaciones, 'Noches de estancia — evolución mensual');
   renderBarChart('chart-bar',    munData.viajeros,       'Viajeros — comparativa mensual');
   renderDonutChart('chart-donut', munData.nacionales, munData.extranjeros);
 
