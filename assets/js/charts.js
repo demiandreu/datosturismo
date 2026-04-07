@@ -2,11 +2,24 @@
 
 const MESES = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
 
-const PALETTE = [
-  { line: '#adb5bd', bar: 'rgba(173,181,189,0.65)', border: '#6c757d' },
-  { line: '#0d6efd', bar: 'rgba(13,110,253,0.70)',  border: '#0a58ca' },
-  { line: '#198754', bar: 'rgba(25,135,84,0.70)',   border: '#146c43' },
+// Named colours for the three most-recent years; older years fall back to EXTRA_COLORS
+const YEAR_COLORS = {
+  2023: { line: '#9E9E9E', bar: 'rgba(158,158,158,0.60)', border: '#757575' },
+  2024: { line: '#1976D2', bar: 'rgba(25,118,210,0.70)',  border: '#1565C0' },
+  2025: { line: '#2E7D32', bar: 'rgba(46,125,50,0.80)',   border: '#1B5E20' },
+};
+const EXTRA_COLORS = [
+  { line: '#E53935', bar: 'rgba(229,57,53,0.60)',  border: '#C62828' },
+  { line: '#F57C00', bar: 'rgba(245,124,0,0.60)',  border: '#E65100' },
+  { line: '#6A1B9A', bar: 'rgba(106,27,154,0.60)', border: '#4A148C' },
 ];
+const _extraIdx = yr => Object.keys(YEAR_COLORS).indexOf(String(yr)) === -1
+  ? EXTRA_COLORS[parseInt(yr, 10) % EXTRA_COLORS.length]
+  : null;
+const _color = yr => YEAR_COLORS[yr] ?? _extraIdx(yr) ?? EXTRA_COLORS[0];
+
+// Raw data keyed by canvasId, for toggle re-render
+const _chartStore = {};
 
 const _activeCharts = {};
 
@@ -14,7 +27,11 @@ function _destroy(id) {
   if (_activeCharts[id]) { _activeCharts[id].destroy(); delete _activeCharts[id]; }
 }
 
-function _destroyAll() { Object.keys(_activeCharts).forEach(_destroy); }
+function _destroyAll() {
+  Object.keys(_activeCharts).forEach(_destroy);
+  // Remove injected toggle buttons so they don't stack on re-render
+  document.querySelectorAll('[id^="toggle-chart-"]').forEach(el => el.remove());
+}
 
 // Group sorted {year,month,value} array into { year: [null×12] } buckets
 function _byYear(data) {
@@ -37,28 +54,38 @@ function fmtNum(v) {
   return Math.round(v).toLocaleString('es-ES');
 }
 
-// ── Line chart (year-over-year) ────────────────────────────────────────────
+// ── Line chart (year-over-year, last 3 years by default) ──────────────────
 
 function renderLineChart(canvasId, data, title) {
-  _destroy(canvasId);
-  const ctx = document.getElementById(canvasId)?.getContext('2d');
+  const canvas = document.getElementById(canvasId);
+  const ctx = canvas?.getContext('2d');
   if (!ctx || !data?.length) return;
 
-  const byYear = _byYear(data);
-  const years  = Object.keys(byYear).sort();
+  const byYear  = _byYear(data);
+  const allYears = Object.keys(byYear).sort();
+
+  _chartStore[canvasId] = { byYear, allYears, title, showAll: false };
+  _drawLineChart(canvasId, ctx);
+  _ensureLineToggle(canvasId, ctx);
+}
+
+function _drawLineChart(canvasId, ctx) {
+  _destroy(canvasId);
+  const { byYear, allYears, title, showAll } = _chartStore[canvasId];
+  const years = showAll ? allYears : allYears.slice(-3);
 
   _activeCharts[canvasId] = new Chart(ctx, {
     type: 'line',
     data: {
       labels: MESES,
-      datasets: years.map((yr, i) => {
-        const c = PALETTE[i] ?? PALETTE[0];
+      datasets: years.map(yr => {
+        const c = _color(yr);
         return {
           label: yr,
           data: byYear[yr],
           borderColor: c.line,
           backgroundColor: c.line + '18',
-          borderWidth: i === years.length - 1 ? 2.5 : 1.5,
+          borderWidth: yr === allYears[allYears.length - 1] ? 2.5 : 1.5,
           pointRadius: 3,
           tension: 0.35,
           fill: false,
@@ -70,22 +97,44 @@ function renderLineChart(canvasId, data, title) {
   });
 }
 
-// ── Bar chart (year-over-year grouped) ────────────────────────────────────
+function _ensureLineToggle(canvasId, ctx) {
+  const canvas = document.getElementById(canvasId);
+  const cardBody = canvas?.closest('.card-body');
+  if (!cardBody) return;
+
+  const btnId = `toggle-${canvasId}`;
+  if (document.getElementById(btnId)) return;   // already injected
+
+  const btn = document.createElement('button');
+  btn.id = btnId;
+  btn.className = 'btn btn-sm btn-outline-secondary mb-2';
+  btn.textContent = 'Mostrar todos los años';
+  btn.addEventListener('click', () => {
+    const store = _chartStore[canvasId];
+    store.showAll = !store.showAll;
+    btn.textContent = store.showAll ? 'Mostrar últimos 3 años' : 'Mostrar todos los años';
+    _drawLineChart(canvasId, ctx);
+  });
+  cardBody.insertBefore(btn, canvas);
+}
+
+// ── Bar chart (last 2 years side by side) ────────────────────────────────
 
 function renderBarChart(canvasId, data, title) {
   _destroy(canvasId);
   const ctx = document.getElementById(canvasId)?.getContext('2d');
   if (!ctx || !data?.length) return;
 
-  const byYear = _byYear(data);
-  const years  = Object.keys(byYear).sort();
+  const byYear  = _byYear(data);
+  const allYears = Object.keys(byYear).sort();
+  const years   = allYears.slice(-2);   // last 2 years only
 
   _activeCharts[canvasId] = new Chart(ctx, {
     type: 'bar',
     data: {
       labels: MESES,
-      datasets: years.map((yr, i) => {
-        const c = PALETTE[i] ?? PALETTE[0];
+      datasets: years.map(yr => {
+        const c = _color(yr);
         return { label: yr, data: byYear[yr], backgroundColor: c.bar, borderColor: c.border, borderWidth: 1 };
       }),
     },
