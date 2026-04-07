@@ -48,6 +48,10 @@
   color: #ffc107;
 }
 
+/* Language buttons */
+.lang-btn { font-size: .78rem; padding: .2rem .45rem; }
+.lang-btn.active { background-color: #fff !important; color: #0d6efd !important; }
+
 /* Footer */
 footer a {
   color: inherit;

@@ -30,12 +30,12 @@
     <span class="navbar-text text-white-50 d-none d-md-block small">
       Estadísticas de turismo en España &middot; Fuente: INE
     </span>
-    <select id="lang-select" class="form-select form-select-sm ms-auto" style="width:auto;max-width:7rem;background-color:rgba(255,255,255,.15);color:#fff;border-color:rgba(255,255,255,.3)">
-      <option value="es">🇪🇸 ES</option>
-      <option value="en">🇬🇧 EN</option>
-      <option value="de">🇩🇪 DE</option>
-      <option value="fr">🇫🇷 FR</option>
-    </select>
+    <div class="d-flex gap-1 ms-3">
+      <button onclick="setLang('es')" class="btn btn-sm btn-outline-light lang-btn" id="btn-lang-es">🇪🇸 ES</button>
+      <button onclick="setLang('en')" class="btn btn-sm btn-outline-light lang-btn" id="btn-lang-en">🇬🇧 EN</button>
+      <button onclick="setLang('de')" class="btn btn-sm btn-outline-light lang-btn" id="btn-lang-de">🇩🇪 DE</button>
+      <button onclick="setLang('fr')" class="btn btn-sm btn-outline-light lang-btn" id="btn-lang-fr">🇫🇷 FR</button>
+    </div>
   </div>
 </nav>
 
@@ -851,10 +851,20 @@ function applyTranslations() {
   }
 }
 
-document.getElementById('lang-select').addEventListener('change', e => {
-  _lang = e.target.value;
+function setLang(lang) {
+  _lang = lang;
   applyTranslations();
-});
+  // Update active button styling
+  document.querySelectorAll('.lang-btn').forEach(btn => {
+    const isActive = btn.id === `btn-lang-${lang}`;
+    btn.classList.toggle('active', isActive);
+    btn.style.backgroundColor = isActive ? '#fff' : '';
+    btn.style.color = isActive ? '#0d6efd' : '';
+  });
+}
+
+// Set initial active state
+setLang('es');
 
 // ── Init ──────────────────────────────────────────────────────────────────
 (async function init() {
