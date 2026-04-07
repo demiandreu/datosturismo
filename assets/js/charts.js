@@ -69,10 +69,18 @@ function renderLineChart(canvasId, data, title) {
   _ensureLineToggle(canvasId, ctx);
 }
 
+const DEFAULT_LINE_YEARS = ['2023', '2024', '2025'];
+const DEFAULT_BAR_YEARS  = ['2024', '2025'];
+
+function _defaultYears(allYears, wanted) {
+  const filtered = allYears.filter(y => wanted.includes(y));
+  return filtered.length ? filtered : allYears.slice(-wanted.length);
+}
+
 function _drawLineChart(canvasId, ctx) {
   _destroy(canvasId);
   const { byYear, allYears, title, showAll } = _chartStore[canvasId];
-  const years = showAll ? allYears : allYears.slice(-3);
+  const years = showAll ? allYears : _defaultYears(allYears, DEFAULT_LINE_YEARS);
 
   _activeCharts[canvasId] = new Chart(ctx, {
     type: 'line',
@@ -127,7 +135,7 @@ function renderBarChart(canvasId, data, title) {
 
   const byYear  = _byYear(data);
   const allYears = Object.keys(byYear).sort();
-  const years   = allYears.slice(-2);   // last 2 years only
+  const years   = _defaultYears(allYears, DEFAULT_BAR_YEARS);
 
   _activeCharts[canvasId] = new Chart(ctx, {
     type: 'bar',
@@ -159,14 +167,6 @@ function renderDonutChart(canvasId, nacionales, extranjeros) {
   const total = nac + ext;
   const pctNac = total ? (nac / total * 100).toFixed(1) : 0;
   const pctExt = total ? (ext / total * 100).toFixed(1) : 0;
-
-  // Update the two residency stat cards
-  const setText = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
-  const mes = ln ? `${MESES[ln.month - 1]} ${ln.year}` : (le ? `${MESES[le.month - 1]} ${le.year}` : '');
-  setText('card-nac-val', nac ? fmtNum(nac) : '—');
-  setText('card-nac-sub', nac ? mes : 'Sin datos');
-  setText('card-ext-val', ext ? fmtNum(ext) : '—');
-  setText('card-ext-sub', ext ? mes : 'Sin datos');
 
   _activeCharts[canvasId] = new Chart(ctx, {
     type: 'doughnut',
@@ -300,22 +300,79 @@ function updateStatCards(viajeros, pernoctaciones, nacionales, extranjeros) {
 
   const lv = last(viajeros);
   const lp = last(pernoctaciones);
+  const ln = last(nacionales);
+  const le = last(extranjeros);
 
   setText('card-viajeros-val', lv ? fmtNum(lv.value) : '—');
   setText('card-viajeros-sub', lv ? `${MESES[lv.month - 1]} ${lv.year}` : 'Sin datos');
   setText('card-pernoct-val',  lp ? fmtNum(lp.value) : '—');
   setText('card-pernoct-sub',  lp ? `${MESES[lp.month - 1]} ${lp.year}` : 'Sin datos');
 
-  // Third card: % extranjero viajeros
+  // Nacional / extranjero sub-cards (in the donut section)
+  setText('card-nac-val', ln ? fmtNum(ln.value) : '—');
+  setText('card-nac-sub', ln ? `${MESES[ln.month - 1]} ${ln.year}` : 'Sin datos');
+  setText('card-ext-val', le ? fmtNum(le.value) : '—');
+  setText('card-ext-sub', le ? `${MESES[le.month - 1]} ${le.year}` : 'Sin datos');
+
+  // Estancia media = pernoctaciones / viajeros (latest shared month)
+  _updateEstanciaMedia(viajeros, pernoctaciones, setText);
+
+  // Índice de internacionalización
+  _updateIndiceIntern(nacionales, extranjeros, setText);
+}
+
+function _updateEstanciaMedia(viajeros, pernoctaciones, setText) {
+  const last = arr => arr?.length ? arr[arr.length - 1] : null;
+  const lv = last(viajeros);
+  const lp = last(pernoctaciones);
+
+  if (!lv || !lp || lv.value === 0) {
+    setText('card-estancia-val', '—');
+    setText('card-estancia-sub', 'Sin datos');
+    return;
+  }
+
+  const estancia = lp.value / lv.value;
+  setText('card-estancia-val', estancia.toFixed(1) + ' días');
+  setText('card-estancia-sub', `${MESES[lp.month - 1]} ${lp.year}`);
+
+  // Year-over-year comparison
+  const prevV = viajeros.find(d => d.year === lv.year - 1 && d.month === lv.month);
+  const prevP = pernoctaciones.find(d => d.year === lp.year - 1 && d.month === lp.month);
+  if (prevV?.value && prevP?.value) {
+    const prevEst = prevP.value / prevV.value;
+    const diff = estancia - prevEst;
+    const sign = diff >= 0 ? '+' : '';
+    setText('card-estancia-sub', `${MESES[lp.month - 1]} ${lp.year} · ${sign}${diff.toFixed(1)} vs año ant.`);
+  }
+}
+
+function _updateIndiceIntern(nacionales, extranjeros, setText) {
+  const last = arr => arr?.length ? arr[arr.length - 1] : null;
   const ln = last(nacionales);
   const le = last(extranjeros);
-  if (ln && le && ln.year === le.year && ln.month === le.month) {
-    const pct = (le.value / (ln.value + le.value) * 100).toFixed(1);
-    setText('card-ocup-val', pct + '%');
-    setText('card-ocup-sub', `Extranjeros · ${MESES[le.month - 1]} ${le.year}`);
-  } else {
-    setText('card-ocup-val', '—');
-    setText('card-ocup-sub', 'Sin datos');
+
+  if (!ln || !le) {
+    setText('card-intern-val', '—');
+    setText('card-intern-sub', 'Sin datos');
+    const badge = document.getElementById('card-intern-badge');
+    if (badge) badge.innerHTML = '';
+    return;
+  }
+
+  const total = ln.value + le.value;
+  const pct   = total ? (le.value / total * 100) : 0;
+
+  setText('card-intern-val', pct.toFixed(1) + '%');
+  setText('card-intern-sub', `${fmtNum(le.value)} extranjeros de ${fmtNum(total)} viajeros · ${MESES[le.month - 1]} ${le.year}`);
+
+  const badge = document.getElementById('card-intern-badge');
+  if (badge) {
+    const [cls, label] =
+      pct >= 50 ? ['bg-success text-white', 'Alta internacionalización'] :
+      pct >= 30 ? ['bg-warning text-dark',  'Internacionalización media'] :
+                  ['bg-danger text-white',   'Baja internacionalización'];
+    badge.innerHTML = `<span class="badge rounded-pill fs-6 px-3 py-2 ${cls}">${label}</span>`;
   }
 }
 

@@ -167,16 +167,31 @@
       <div class="col-sm-6 col-lg-4">
         <div class="card border-0 shadow-sm h-100">
           <div class="card-body d-flex align-items-start gap-3">
-            <div class="stat-card-icon bg-primary-subtle text-primary">📈</div>
+            <div class="stat-card-icon bg-success-subtle text-success">🛏️</div>
             <div>
-              <p class="text-muted small mb-1">Grado de ocupación (provincia)</p>
-              <h3 class="fw-bold text-primary mb-0" id="card-ocup-val">—</h3>
-              <small class="text-muted" id="card-ocup-sub">—</small>
+              <p class="text-muted small mb-1">Estancia media (último mes)</p>
+              <h3 class="fw-bold text-success mb-0" id="card-estancia-val">—</h3>
+              <small class="text-muted" id="card-estancia-sub">—</small>
             </div>
           </div>
         </div>
       </div>
 
+    </div>
+
+    <!-- ── Índice de internacionalización ────────────────────────────── -->
+    <div class="card border-0 shadow-sm mb-4" id="card-intern">
+      <div class="card-body d-flex align-items-center gap-4 flex-wrap">
+        <div>
+          <p class="text-muted small mb-1 fw-semibold text-uppercase" style="letter-spacing:.05em">Índice de internacionalización</p>
+          <div class="d-flex align-items-baseline gap-2">
+            <h2 class="fw-bold mb-0" id="card-intern-val">—</h2>
+            <span class="fs-5 text-muted">% viajeros extranjeros</span>
+          </div>
+          <small class="text-muted" id="card-intern-sub">—</small>
+        </div>
+        <div id="card-intern-badge" class="ms-auto"></div>
+      </div>
     </div>
 
     <!-- ── Termómetro ──────────────────────────────────────────────────── -->
