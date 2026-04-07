@@ -210,6 +210,42 @@
 
     </div>
 
+    <!-- ── Nacional vs Extranjero ─────────────────────────────────────── -->
+    <div class="row g-4 mt-0" id="section-residencia">
+
+      <div class="col-lg-5">
+        <div class="card border-0 shadow-sm chart-card">
+          <div class="card-body">
+            <canvas id="chart-donut" height="260"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-lg-7 d-flex flex-column gap-3 justify-content-center">
+        <div class="card border-0 shadow-sm h-100">
+          <div class="card-body d-flex align-items-start gap-3">
+            <div class="stat-card-icon bg-primary-subtle text-primary">🇪🇸</div>
+            <div>
+              <p class="text-muted small mb-1">Viajeros nacionales (último mes)</p>
+              <h3 class="fw-bold text-primary mb-0" id="card-nac-val">—</h3>
+              <small class="text-muted" id="card-nac-sub">—</small>
+            </div>
+          </div>
+        </div>
+        <div class="card border-0 shadow-sm h-100">
+          <div class="card-body d-flex align-items-start gap-3">
+            <div class="stat-card-icon bg-warning-subtle text-warning">✈️</div>
+            <div>
+              <p class="text-muted small mb-1">Viajeros extranjeros (último mes)</p>
+              <h3 class="fw-bold text-warning mb-0" id="card-ext-val">—</h3>
+              <small class="text-muted" id="card-ext-sub">—</small>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
     <!-- No data fallback -->
     <div id="no-data-msg" class="d-none mt-4">
       <div class="alert alert-warning mb-0">
