@@ -42,7 +42,7 @@ function fmtNum(v) {
 function renderLineChart(canvasId, data, title) {
   _destroy(canvasId);
   const ctx = document.getElementById(canvasId)?.getContext('2d');
-  if (!ctx || !data.length) return;
+  if (!ctx || !data?.length) return;
 
   const byYear = _byYear(data);
   const years  = Object.keys(byYear).sort();
@@ -75,7 +75,7 @@ function renderLineChart(canvasId, data, title) {
 function renderBarChart(canvasId, data, title) {
   _destroy(canvasId);
   const ctx = document.getElementById(canvasId)?.getContext('2d');
-  if (!ctx || !data.length) return;
+  if (!ctx || !data?.length) return;
 
   const byYear = _byYear(data);
   const years  = Object.keys(byYear).sort();
@@ -258,7 +258,7 @@ function updateTermometro(pernoctaciones) {
   const el = document.getElementById('termometro-content');
   if (!el) return;
 
-  if (!pernoctaciones.length) {
+  if (!pernoctaciones?.length) {
     el.innerHTML = '<span class="text-muted">Sin datos de pernoctaciones.</span>';
     return;
   }
@@ -302,7 +302,7 @@ function renderDashboard(munData, compName, compData) {
   renderDonutChart('chart-donut', munData.nacionales, munData.extranjeros);
 
   const compSection = document.getElementById('section-comparison');
-  if (compName && compData && compData.pernoctaciones.length) {
+  if (compName && compData?.pernoctaciones?.length) {
     renderComparisonChart('chart-comparison',
       document.getElementById('dash-title').textContent, munData.pernoctaciones,
       compName, compData.pernoctaciones

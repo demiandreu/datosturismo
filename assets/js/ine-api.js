@@ -95,14 +95,24 @@ async function getMunicipioData(municipioName) {
     a.year !== b.year ? a.year - b.year : a.month - b.month
   );
 
-  const viajeros       = sort(vRows);
-  const pernoctaciones = sort(pRows);
+  // Total viajeros/pernoctaciones (for charts)
+  const totalViajeros = sort(
+    match.filter(r => new RegExp('viajero', 'i').test(r.indicador) && /total/i.test(r.residencia))
+  );
+  const viajeros       = totalViajeros.length ? totalViajeros : sort(vRows);
+  const pernoctaciones = sort(pRows.filter(r => /total/i.test(r.residencia))).length
+    ? sort(pRows.filter(r => /total/i.test(r.residencia)))
+    : sort(pRows);
 
-  console.log(`[INE] "${municipioName}": viajeros=${viajeros.length} pts, pernoct=${pernoctaciones.length} pts`);
+  // Split by residency for donut / stat card
+  const nacionales  = sort(match.filter(r => new RegExp('viajero', 'i').test(r.indicador) && /españa/i.test(r.residencia)));
+  const extranjeros = sort(match.filter(r => new RegExp('viajero', 'i').test(r.indicador) && /extranjero/i.test(r.residencia)));
+
+  console.log(`[INE] "${municipioName}": viajeros=${viajeros.length} pts, pernoct=${pernoctaciones.length} pts, nac=${nacionales.length}, ext=${extranjeros.length}`);
   if (viajeros.length)       console.log('  último viajeros:', viajeros[viajeros.length - 1]);
   if (pernoctaciones.length) console.log('  último pernoct:', pernoctaciones[pernoctaciones.length - 1]);
 
-  return { viajeros, pernoctaciones };
+  return { viajeros, pernoctaciones, nacionales, extranjeros };
 }
 
 // Warm the cache on page load so the first Ver datos click is instant
