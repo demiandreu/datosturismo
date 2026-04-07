@@ -415,6 +415,133 @@ function updateTermometro(pernoctaciones) {
     </div>`;
 }
 
+// ── CCAA horizontal bar (Vista Nacional) ──────────────────────────────────
+
+function renderCCAAChart(canvasId, data) {
+  _destroy(canvasId);
+  const ctx = document.getElementById(canvasId)?.getContext('2d');
+  if (!ctx || !data?.length) return;
+  const { year, month } = data[0];
+
+  _activeCharts[canvasId] = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: data.map(d => d.ccaa),
+      datasets: [{
+        label: 'Pernoctaciones',
+        data:  data.map(d => d.value),
+        backgroundColor: data.map((_, i) => i === 0 ? 'rgba(13,110,253,0.85)' : 'rgba(13,110,253,0.50)'),
+        borderColor: '#0d6efd',
+        borderWidth: 1,
+      }],
+    },
+    options: {
+      indexAxis: 'y',
+      responsive: true,
+      plugins: {
+        legend: { display: false },
+        title:  { display: true, text: `Pernoctaciones por CCAA — ${MESES[month - 1]} ${year}`, font: { size: 13 } },
+        tooltip: { callbacks: { label: c => ` ${fmtNum(c.parsed.x)}` } },
+      },
+      scales: { x: { beginAtZero: true, ticks: { callback: _axisFormatter } } },
+    },
+  });
+}
+
+// ── National trend line (Vista Nacional) ──────────────────────────────────
+
+function renderNacionalTrendChart(canvasId, data) {
+  _destroy(canvasId);
+  const ctx = document.getElementById(canvasId)?.getContext('2d');
+  if (!ctx || !data?.length) return;
+
+  const byYear   = _byYear(data);
+  const allYears = Object.keys(byYear).sort();
+
+  _activeCharts[canvasId] = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: MESES,
+      datasets: allYears.map(yr => {
+        const c = _color(yr);
+        return {
+          label: yr, data: byYear[yr],
+          borderColor: c.line, backgroundColor: c.line + '18',
+          borderWidth: yr === allYears[allYears.length - 1] ? 2.5 : 1.5,
+          pointRadius: 3, tension: 0.35, fill: false, spanGaps: false,
+        };
+      }),
+    },
+    options: _lineOpts('Pernoctaciones totales España — evolución anual'),
+  });
+}
+
+// ── País donut (Internacional) ────────────────────────────────────────────
+
+const _PAIS_PAL = ['#E53935','#FB8C00','#FDD835','#43A047','#00ACC1',
+                   '#1E88E5','#5E35B1','#8E24AA','#00897B','#546E7A'];
+
+function renderPaisesDonutChart(canvasId, data) {
+  _destroy(canvasId);
+  const ctx = document.getElementById(canvasId)?.getContext('2d');
+  if (!ctx || !data?.length) return;
+  const { year, month } = data[0];
+
+  _activeCharts[canvasId] = new Chart(ctx, {
+    type: 'doughnut',
+    data: {
+      labels: data.map(d => d.label),
+      datasets: [{
+        data: data.map(d => d.value),
+        backgroundColor: _PAIS_PAL.slice(0, data.length).map(c => c + 'CC'),
+        borderColor:     _PAIS_PAL.slice(0, data.length),
+        borderWidth: 2,
+      }],
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: { position: 'right', labels: { boxWidth: 14, padding: 10, font: { size: 11 } } },
+        title:  { display: true, text: `Top países de origen — ${MESES[month - 1]} ${year}`, font: { size: 13 } },
+        tooltip: { callbacks: { label: c => ` ${c.label}: ${fmtNum(c.parsed)}` } },
+      },
+    },
+  });
+}
+
+// ── País trend multi-line (Internacional) ─────────────────────────────────
+
+function renderPaisesTrendChart(canvasId, byPais) {
+  _destroy(canvasId);
+  const ctx = document.getElementById(canvasId)?.getContext('2d');
+  if (!ctx || !Object.keys(byPais).length) return;
+
+  const keySet = new Set();
+  Object.values(byPais).flat().forEach(d =>
+    keySet.add(`${d.year}-${String(d.month).padStart(2, '0')}`)
+  );
+  const keys   = [...keySet].sort();
+  const paises = Object.keys(byPais);
+
+  _activeCharts[canvasId] = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: keys.map(k => { const [y, m] = k.split('-'); return `${MESES[+m - 1]} ${y}`; }),
+      datasets: paises.map((p, i) => {
+        const map = {};
+        byPais[p].forEach(d => { map[`${d.year}-${String(d.month).padStart(2, '0')}`] = d.value; });
+        const col = _PAIS_PAL[i] ?? _PAIS_PAL[0];
+        return {
+          label: p, data: keys.map(k => map[k] ?? null),
+          borderColor: col, backgroundColor: col + '18',
+          borderWidth: 2, pointRadius: 2, tension: 0.35, fill: false, spanGaps: false,
+        };
+      }),
+    },
+    options: _lineOpts('Evolución turistas internacionales — top 5 países (últimos 24 meses)'),
+  });
+}
+
 // ── Main entry point ────────────────────────────────────────────────────────
 
 function renderDashboard(munData, compName, compData) {

@@ -3,13 +3,41 @@
 // INE CSV for table 2082 — Viajeros y pernoctaciones en apartamentos turísticos
 // Column format (semicolon-separated, no quotes):
 //   "38001 Adeje;Viajero;Residentes en España;2026M02;1.548"
-//   col 0: municipio code + name   e.g. "38001 Adeje"
+//   col 0: municipio code + name   e.g. "38001 Adeje"  (first 2 digits = province code)
 //   col 1: indicator               e.g. "Viajero", "Pernoctaciones"
 //   col 2: residency type          e.g. "Residentes en España", "Residentes en el Extranjero"
 //   col 3: period                  e.g. "2026M02"
 //   col 4: value (ES number fmt)   e.g. "1.548"  → 1548  (dot = thousands sep)
 
 const INE_CSV_URL = 'https://www.ine.es/jaxiT3/files/t/csv_bdsc/2082.csv';
+
+// Province code (first 2 digits of INE municipio code) → CCAA name
+const PROV_TO_CCAA = {
+  '01':'País Vasco',         '20':'País Vasco',         '48':'País Vasco',
+  '02':'Castilla-La Mancha', '13':'Castilla-La Mancha', '16':'Castilla-La Mancha',
+  '19':'Castilla-La Mancha', '45':'Castilla-La Mancha',
+  '03':'Com. Valenciana',    '12':'Com. Valenciana',    '46':'Com. Valenciana',
+  '04':'Andalucía',          '11':'Andalucía',          '14':'Andalucía',
+  '18':'Andalucía',          '21':'Andalucía',          '23':'Andalucía',
+  '29':'Andalucía',          '41':'Andalucía',
+  '05':'Castilla y León',    '09':'Castilla y León',    '24':'Castilla y León',
+  '34':'Castilla y León',    '37':'Castilla y León',    '40':'Castilla y León',
+  '42':'Castilla y León',    '47':'Castilla y León',    '49':'Castilla y León',
+  '06':'Extremadura',        '10':'Extremadura',
+  '07':'Illes Balears',
+  '08':'Catalunya',          '17':'Catalunya',          '25':'Catalunya', '43':'Catalunya',
+  '15':'Galicia',            '27':'Galicia',            '32':'Galicia',   '36':'Galicia',
+  '22':'Aragón',             '44':'Aragón',             '50':'Aragón',
+  '26':'La Rioja',
+  '28':'Madrid',
+  '30':'R. de Murcia',
+  '31':'C.F. de Navarra',
+  '33':'Asturias',
+  '35':'Canarias',           '38':'Canarias',
+  '39':'Cantabria',
+  '51':'Ceuta',
+  '52':'Melilla',
+};
 
 let _csvRows = null;   // parsed rows, cached after first load
 
@@ -53,7 +81,8 @@ async function _loadCSV() {
     const value = parseFloat(valorRaw.replace(/\./g, '').replace(',', '.'));
     if (isNaN(value) || value <= 0) continue;
 
-    rows.push({ municipio, indicador, residencia, year, month, value });
+    const prov = municipioRaw.match(/^(\d{2})/)?.[1] ?? '';
+    rows.push({ municipio, indicador, residencia, year, month, value, prov });
   }
 
   _csvRows = rows;
@@ -133,6 +162,62 @@ async function getTop10(n = 10) {
     .map(([municipio, value]) => ({ municipio, year, month, value }))
     .sort((a, b) => b.value - a.value)
     .slice(0, n);
+}
+
+// ── National aggregate helpers ─────────────────────────────────────────────
+
+async function getNacionalStats() {
+  const rows = await _loadCSV();
+  const perRows = rows.filter(r => /pernoct/i.test(r.indicador));
+  const viaRows = rows.filter(r => /viajero/i.test(r.indicador));
+  if (!perRows.length) return null;
+
+  const latest = perRows.reduce((b, r) =>
+    r.year > b.year || (r.year === b.year && r.month > b.month) ? r : b, perRows[0]);
+  const { year, month } = latest;
+
+  const sumMonth = (arr, y, m) =>
+    arr.filter(r => r.year === y && r.month === m).reduce((s, r) => s + r.value, 0);
+
+  return {
+    year, month,
+    totalPernoct:  sumMonth(perRows, year, month),
+    totalViajeros: sumMonth(viaRows, year, month),
+    prevPernoct:   sumMonth(perRows, year - 1, month),
+    prevViajeros:  sumMonth(viaRows, year - 1, month),
+  };
+}
+
+async function getTop15ByCCAA() {
+  const rows = await _loadCSV();
+  const perRows = rows.filter(r => /pernoct/i.test(r.indicador));
+  if (!perRows.length) return [];
+
+  const latest = perRows.reduce((b, r) =>
+    r.year > b.year || (r.year === b.year && r.month > b.month) ? r : b, perRows[0]);
+  const { year, month } = latest;
+
+  const ccaaMap = {};
+  for (const r of perRows.filter(r => r.year === year && r.month === month)) {
+    const ccaa = PROV_TO_CCAA[r.prov] ?? 'Otras';
+    ccaaMap[ccaa] = (ccaaMap[ccaa] ?? 0) + r.value;
+  }
+  return Object.entries(ccaaMap)
+    .map(([ccaa, value]) => ({ ccaa, value, year, month }))
+    .sort((a, b) => b.value - a.value)
+    .slice(0, 15);
+}
+
+async function getNacionalTrend(yearsFilter = ['2023', '2024', '2025']) {
+  const rows = await _loadCSV();
+  const map = {};
+  for (const r of rows.filter(r => /pernoct/i.test(r.indicador))) {
+    if (!yearsFilter.includes(String(r.year))) continue;
+    const key = `${r.year}-${r.month}`;
+    map[key] = { year: r.year, month: r.month, value: (map[key]?.value ?? 0) + r.value };
+  }
+  return Object.values(map).sort((a, b) =>
+    a.year !== b.year ? a.year - b.year : a.month - b.month);
 }
 
 // Warm the cache on page load so the first Ver datos click is instant
