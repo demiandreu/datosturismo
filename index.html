@@ -33,7 +33,31 @@
   </div>
 </nav>
 
-<!-- ── Filter bar ───────────────────────────────────────────────────────── -->
+<!-- ── Tab navigation ───────────────────────────────────────────────────── -->
+<div class="bg-white border-bottom shadow-sm">
+  <div class="container-fluid">
+    <ul class="nav nav-tabs border-0 pt-2" id="main-tabs" role="tablist">
+      <li class="nav-item" role="presentation">
+        <button class="nav-link active fw-semibold" id="tab-municipio-btn" data-tab="municipio" type="button">
+          🏖️ Por municipio
+        </button>
+      </li>
+      <li class="nav-item" role="presentation">
+        <button class="nav-link fw-semibold" id="tab-nacional-btn" data-tab="nacional" type="button">
+          🇪🇸 Vista nacional
+        </button>
+      </li>
+      <li class="nav-item" role="presentation">
+        <button class="nav-link fw-semibold" id="tab-internacional-btn" data-tab="internacional" type="button">
+          ✈️ Internacional
+        </button>
+      </li>
+    </ul>
+  </div>
+</div>
+
+<!-- ── Filter bar (municipio tab only) ──────────────────────────────────── -->
+<div id="filter-bar-wrap">
 <div class="filter-bar bg-white border-bottom shadow-sm py-3">
   <div class="container-fluid">
     <div class="row g-2 align-items-end">
@@ -70,9 +94,13 @@
     </div><!-- /row -->
   </div>
 </div>
+</div><!-- /filter-bar-wrap -->
 
-<!-- ── Main content ─────────────────────────────────────────────────────── -->
-<main class="container-fluid py-4">
+<!-- ── Tab panes ─────────────────────────────────────────────────────────── -->
+
+<!-- Pane: Por municipio -->
+<div id="pane-municipio">
+<main class="container-fluid py-4 px-4">
 
   <!-- Loading spinner -->
   <div id="ui-loading" class="d-none text-center py-5">
@@ -274,7 +302,7 @@
 </main>
 
 <!-- ── Top 10 ─────────────────────────────────────────────────────────── -->
-<section class="container-fluid px-4 mt-5 mb-5" id="section-top10">
+<section class="container-fluid px-4 mt-2 mb-5" id="section-top10">
   <div class="card border-0 shadow-sm">
     <div class="card-body">
       <h5 class="fw-bold mb-1" id="top10-title">Top 10 destinos más visitados</h5>
@@ -283,6 +311,153 @@
     </div>
   </div>
 </section>
+</div><!-- /pane-municipio -->
+
+<!-- Pane: Vista Nacional -->
+<div id="pane-nacional" class="d-none">
+  <div class="container-fluid py-4 px-4">
+
+    <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-4">
+      <div>
+        <h4 class="mb-0 fw-bold">🇪🇸 España en cifras</h4>
+        <small class="text-muted">Apartamentos turísticos · INE EOA · Datos nacionales</small>
+      </div>
+      <span class="badge bg-secondary fw-normal small">INE · EOA · Últimas observaciones</span>
+    </div>
+
+    <!-- Stat cards -->
+    <div class="row g-3 mb-4" id="nac-cards">
+      <div class="col-sm-6 col-lg-3">
+        <div class="card border-0 shadow-sm h-100">
+          <div class="card-body d-flex align-items-start gap-3">
+            <div class="stat-card-icon bg-primary-subtle text-primary">🧳</div>
+            <div>
+              <p class="text-muted small mb-1">Viajeros totales España</p>
+              <h3 class="fw-bold text-primary mb-0" id="nac-viajeros-val">—</h3>
+              <small class="text-muted" id="nac-viajeros-sub">—</small>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="col-sm-6 col-lg-3">
+        <div class="card border-0 shadow-sm h-100">
+          <div class="card-body d-flex align-items-start gap-3">
+            <div class="stat-card-icon bg-primary-subtle text-primary">🌙</div>
+            <div>
+              <p class="text-muted small mb-1">Pernoctaciones totales</p>
+              <h3 class="fw-bold text-primary mb-0" id="nac-pernoct-val">—</h3>
+              <small class="text-muted" id="nac-pernoct-sub">—</small>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="col-sm-6 col-lg-3">
+        <div class="card border-0 shadow-sm h-100">
+          <div class="card-body d-flex align-items-start gap-3">
+            <div class="stat-card-icon bg-success-subtle text-success">📈</div>
+            <div>
+              <p class="text-muted small mb-1">Variación interanual</p>
+              <h3 class="fw-bold mb-0" id="nac-variacion-val">—</h3>
+              <small class="text-muted" id="nac-variacion-sub">—</small>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="col-sm-6 col-lg-3">
+        <div class="card border-0 shadow-sm h-100">
+          <div class="card-body d-flex align-items-start gap-3">
+            <div class="stat-card-icon bg-success-subtle text-success">🛏️</div>
+            <div>
+              <p class="text-muted small mb-1">Estancia media nacional</p>
+              <h3 class="fw-bold text-success mb-0" id="nac-estancia-val">—</h3>
+              <small class="text-muted" id="nac-estancia-sub">—</small>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Charts -->
+    <div class="row g-4">
+      <div class="col-lg-7">
+        <div class="card border-0 shadow-sm chart-card" style="max-height:none">
+          <div class="card-body">
+            <canvas id="chart-ccaa" height="420"></canvas>
+          </div>
+        </div>
+      </div>
+      <div class="col-lg-5">
+        <div class="card border-0 shadow-sm chart-card">
+          <div class="card-body">
+            <canvas id="chart-nac-trend" height="280"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div><!-- /pane-nacional -->
+
+<!-- Pane: Internacional -->
+<div id="pane-internacional" class="d-none">
+  <div class="container-fluid py-4 px-4">
+
+    <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-4">
+      <div>
+        <h4 class="mb-0 fw-bold">✈️ Turismo Internacional</h4>
+        <small class="text-muted">FRONTUR · INE · Turistas internacionales por país de origen</small>
+      </div>
+      <span class="badge bg-secondary fw-normal small">INE · FRONTUR · Tabla 10822</span>
+    </div>
+
+    <!-- CCAA filter -->
+    <div class="row g-2 align-items-end mb-4">
+      <div class="col-sm-6 col-lg-4 col-xl-3">
+        <label for="sel-ccaa-frontur" class="form-label small fw-semibold text-muted mb-1">
+          Comunidad autónoma de destino
+        </label>
+        <select id="sel-ccaa-frontur" class="form-select form-select-sm">
+          <option value="Total Nacional">Total Nacional</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Loading / error states for internacional -->
+    <div id="int-loading" class="text-center py-5 d-none">
+      <div class="spinner-border text-primary" role="status" style="width:3rem;height:3rem;">
+        <span class="visually-hidden">Cargando…</span>
+      </div>
+      <p class="mt-3 text-muted">Cargando datos FRONTUR…</p>
+    </div>
+    <div id="int-error" class="d-none">
+      <div class="alert alert-warning">
+        <strong>No se pudieron cargar los datos FRONTUR.</strong>
+        <span id="int-error-msg"></span>
+      </div>
+    </div>
+
+    <!-- Charts -->
+    <div id="int-charts">
+      <div class="row g-4">
+        <div class="col-lg-5">
+          <div class="card border-0 shadow-sm chart-card">
+            <div class="card-body">
+              <canvas id="chart-paises-donut" height="320"></canvas>
+            </div>
+          </div>
+        </div>
+        <div class="col-lg-7">
+          <div class="card border-0 shadow-sm chart-card">
+            <div class="card-body">
+              <canvas id="chart-paises-trend" height="280"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div><!-- /pane-internacional -->
 
 <!-- ── Footer ────────────────────────────────────────────────────────────── -->
 <footer class="bg-white border-top mt-5 py-3">
@@ -299,6 +474,7 @@
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
 <script src="assets/js/ine-api.js"></script>
+<script src="assets/js/frontur-api.js"></script>
 <script src="assets/js/charts.js"></script>
 
 <script>
@@ -312,7 +488,27 @@ const badgeMun       = document.getElementById('municipios-badge');
 
 let _allLocations = [];
 
-// ── UI state helpers ──────────────────────────────────────────────────────
+// ── Tab switching ─────────────────────────────────────────────────────────
+const TABS      = ['municipio', 'nacional', 'internacional'];
+let _nacLoaded  = false;
+let _intLoaded  = false;
+
+function switchTab(name) {
+  TABS.forEach(t => {
+    document.getElementById(`tab-${t}-btn`).classList.toggle('active', t === name);
+    document.getElementById(`pane-${t}`).classList.toggle('d-none', t !== name);
+  });
+  document.getElementById('filter-bar-wrap').classList.toggle('d-none', name !== 'municipio');
+
+  if (name === 'nacional'       && !_nacLoaded) { _nacLoaded = true; loadNacional(); }
+  if (name === 'internacional'  && !_intLoaded) { _intLoaded = true; loadInternacional(); }
+}
+
+document.querySelectorAll('#main-tabs button[data-tab]').forEach(btn =>
+  btn.addEventListener('click', () => switchTab(btn.dataset.tab))
+);
+
+// ── UI state helpers (municipio tab) ──────────────────────────────────────
 const UI_STATES = ['loading', 'error', 'welcome', 'dashboard'];
 
 function showState(state) {
@@ -320,9 +516,7 @@ function showState(state) {
     const el = document.getElementById(`ui-${s}`);
     if (el) el.classList.toggle('d-none', s !== state);
   });
-  if (state === 'loading') {
-    document.getElementById('ui-loading').style.display = 'flex';
-  }
+  if (state === 'loading') document.getElementById('ui-loading').style.display = 'flex';
 }
 
 function setLoadingMsg(msg) { document.getElementById('loading-msg').textContent = msg; }
@@ -331,7 +525,7 @@ function checkButtonReady() { btnVer.disabled = !selMun.value; }
 
 selMun.addEventListener('change', checkButtonReady);
 
-// ── Load municipios from API ───────────────────────────────────────────────
+// ── Load municipios ───────────────────────────────────────────────────────
 function _populateSelect(locs) {
   selMun.innerHTML = '';
   if (!locs.length) {
@@ -346,10 +540,8 @@ function _populateSelect(locs) {
 async function loadMunicipios() {
   try {
     _allLocations = await getAvailableLocations();
-
     badgeMun.textContent = _allLocations.length;
     badgeMun.classList.remove('d-none');
-
     inputMunSearch.disabled = false;
     inputMunSearch.placeholder = `Buscar entre ${_allLocations.length} municipios…`;
     _populateSelect(_allLocations);
@@ -360,7 +552,7 @@ async function loadMunicipios() {
   }
 }
 
-// ── Search input → filter select ──────────────────────────────────────────
+// ── Search input ──────────────────────────────────────────────────────────
 inputMunSearch.addEventListener('input', () => {
   const q    = inputMunSearch.value.trim().toLowerCase();
   const list = q ? _allLocations.filter(loc => loc.toLowerCase().includes(q)) : _allLocations;
@@ -373,23 +565,17 @@ inputMunSearch.addEventListener('input', () => {
 btnVer.addEventListener('click', async () => {
   const municipio = selMun.value;
   if (!municipio) return;
-
   showState('loading');
   setLoadingMsg(`Cargando datos de ${municipio}…`);
   btnVer.disabled = true;
-
   try {
     const munData = await getMunicipioData(municipio);
-
     document.getElementById('dash-title').textContent    = municipio;
     document.getElementById('dash-subtitle').textContent = 'Apartamentos turísticos · INE EOA';
-
-    const hasData = munData.viajeros.length || munData.pernoctaciones.length;
-    document.getElementById('no-data-msg').classList.toggle('d-none', !!hasData);
-
+    document.getElementById('no-data-msg').classList.toggle('d-none',
+      !!(munData.viajeros.length || munData.pernoctaciones.length));
     showState('dashboard');
     renderDashboard(munData, null, null);
-
   } catch (e) {
     console.error('[App] Error cargando datos:', e);
     setErrorMsg(e.message || 'Error desconocido. Comprueba tu conexión e inténtalo de nuevo.');
@@ -400,20 +586,102 @@ btnVer.addEventListener('click', async () => {
 });
 
 // ── Top 10 auto-load ──────────────────────────────────────────────────────
+const MESES_LARGO = ['Enero','Febrero','Marzo','Abril','Mayo','Junio',
+                     'Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+
 async function loadTop10() {
   try {
     const top10 = await getTop10();
     if (!top10.length) return;
     const { year, month } = top10[0];
-    const mes = ['Enero','Febrero','Marzo','Abril','Mayo','Junio',
-                 'Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'][month - 1];
     document.getElementById('top10-subtitle').textContent =
-      `Pernoctaciones totales · ${mes} ${year} · Fuente: INE EOA`;
+      `Pernoctaciones totales · ${MESES_LARGO[month - 1]} ${year} · Fuente: INE EOA`;
     renderTop10Chart('chart-top10', top10);
   } catch (e) {
     console.warn('[App] Top 10 no disponible:', e.message);
     document.getElementById('top10-subtitle').textContent = 'No disponible';
   }
+}
+
+// ── Vista Nacional ────────────────────────────────────────────────────────
+function _setText(id, v) { const el = document.getElementById(id); if (el) el.textContent = v; }
+
+async function loadNacional() {
+  try {
+    const [stats, top15, trend] = await Promise.all([
+      getNacionalStats(),
+      getTop15ByCCAA(),
+      getNacionalTrend(['2023', '2024', '2025']),
+    ]);
+
+    if (stats) {
+      const mes = `${MESES_LARGO[stats.month - 1]} ${stats.year}`;
+      _setText('nac-viajeros-val',  fmtNum(stats.totalViajeros));
+      _setText('nac-viajeros-sub',  mes);
+      _setText('nac-pernoct-val',   fmtNum(stats.totalPernoct));
+      _setText('nac-pernoct-sub',   mes);
+
+      const pct = stats.prevPernoct
+        ? ((stats.totalPernoct - stats.prevPernoct) / stats.prevPernoct * 100).toFixed(1)
+        : null;
+      const varEl = document.getElementById('nac-variacion-val');
+      if (varEl) {
+        varEl.textContent = pct !== null ? (pct >= 0 ? '+' : '') + pct + '%' : '—';
+        varEl.className = `fw-bold mb-0 ${pct === null ? '' : pct >= 0 ? 'text-success' : 'text-danger'}`;
+      }
+      _setText('nac-variacion-sub', pct !== null
+        ? `vs ${MESES_LARGO[stats.month - 1]} ${stats.year - 1}` : 'Sin dato anterior');
+
+      if (stats.totalViajeros) {
+        const est = (stats.totalPernoct / stats.totalViajeros).toFixed(1);
+        _setText('nac-estancia-val', est + ' días');
+        _setText('nac-estancia-sub', mes);
+      }
+    }
+
+    renderCCAAChart('chart-ccaa', top15);
+    renderNacionalTrendChart('chart-nac-trend', trend);
+  } catch (e) {
+    console.error('[App] Error cargando Vista Nacional:', e);
+  }
+}
+
+// ── Internacional (FRONTUR) ───────────────────────────────────────────────
+let _fronturCCAAs = [];
+
+async function loadInternacional() {
+  const loadingEl = document.getElementById('int-loading');
+  const errorEl   = document.getElementById('int-error');
+  const chartsEl  = document.getElementById('int-charts');
+
+  loadingEl.classList.remove('d-none');
+  chartsEl.classList.add('d-none');
+
+  try {
+    _fronturCCAAs = await getFronturCCAAs();
+    const sel = document.getElementById('sel-ccaa-frontur');
+    sel.innerHTML = '';
+    _fronturCCAAs.forEach(c => sel.appendChild(new Option(c, c)));
+    sel.addEventListener('change', () => refreshFrontur(sel.value));
+
+    await refreshFrontur('Total Nacional');
+    loadingEl.classList.add('d-none');
+    chartsEl.classList.remove('d-none');
+  } catch (e) {
+    console.error('[App] Error cargando FRONTUR:', e);
+    loadingEl.classList.add('d-none');
+    errorEl.classList.remove('d-none');
+    document.getElementById('int-error-msg').textContent = ' ' + e.message;
+  }
+}
+
+async function refreshFrontur(ccaa) {
+  const [topPaises, top5Trend] = await Promise.all([
+    getFronturTopPaises(ccaa, 10),
+    getFronturTopPaises(ccaa, 5).then(top5 => getFronturTrend(top5.map(d => d.pais), ccaa)),
+  ]);
+  renderPaisesDonutChart('chart-paises-donut', topPaises);
+  renderPaisesTrendChart('chart-paises-trend', top5Trend);
 }
 
 // ── Init ──────────────────────────────────────────────────────────────────

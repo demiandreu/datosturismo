@@ -67,6 +67,15 @@ footer a:hover {
   border-top-right-radius: 0;
 }
 
+/* Tab nav */
+#main-tabs .nav-link { border-bottom: 3px solid transparent; border-radius: 0; padding: .6rem 1rem; }
+#main-tabs .nav-link.active { border-bottom-color: #0d6efd; color: #0d6efd; background: transparent; }
+#main-tabs .nav-link:not(.active) { color: #6c757d; }
+
+/* CCAA / país charts can be taller */
+#pane-nacional .chart-card canvas,
+#pane-internacional .chart-card canvas { max-height: 480px; }
+
 /* Responsive tweaks */
 @media (max-width: 575.98px) {
   .filter-bar .row > div {
