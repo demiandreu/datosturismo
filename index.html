@@ -63,6 +63,18 @@
     </ul>
   </div>
 
+  <!-- Global month selector (visible in all tabs) -->
+  <div class="container-fluid py-2 border-bottom" id="global-month-bar">
+    <div class="d-flex align-items-center gap-2 flex-wrap">
+      <label for="sel-month" class="form-label small fw-semibold text-muted mb-0 flex-shrink-0">
+        Período:
+      </label>
+      <select id="sel-month" class="form-select form-select-sm" style="max-width:200px">
+        <option value="">Último mes disponible</option>
+      </select>
+    </div>
+  </div>
+
   <!-- Filter inputs (municipio tab only) -->
   <div id="filter-bar-wrap" class="py-3">
   <div class="container-fluid">
@@ -314,7 +326,9 @@
     <div class="card-body">
       <h5 class="fw-bold mb-1" id="top10-title" data-i18n="top10_titulo">Top 10 destinos más visitados</h5>
       <p class="text-muted small mb-3" id="top10-subtitle">Cargando…</p>
-      <canvas id="chart-top10" height="320"></canvas>
+      <div style="position:relative;height:360px">
+        <canvas id="chart-top10"></canvas>
+      </div>
     </div>
   </div>
 </section>
@@ -592,13 +606,45 @@ btnVer.addEventListener('click', async () => {
   }
 });
 
-// ── Top 10 auto-load ──────────────────────────────────────────────────────
+// ── Month selector ────────────────────────────────────────────────────────
 const MESES_LARGO = ['Enero','Febrero','Marzo','Abril','Mayo','Junio',
                      'Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
 
-async function loadTop10() {
+function getSelectedMonth() {
+  const val = document.getElementById('sel-month')?.value;
+  if (!val) return { year: null, month: null };
+  const [y, m] = val.split('-');
+  return { year: parseInt(y, 10), month: parseInt(m, 10) };
+}
+
+async function populateMonthSelector() {
   try {
-    const top10 = await getTop10();
+    const months = await getAvailableMonths(24);
+    const sel = document.getElementById('sel-month');
+    months.forEach(({ year, month, key }) => {
+      sel.appendChild(new Option(`${MESES_LARGO[month - 1]} ${year}`, key));
+    });
+    console.log(`[App] Selector de meses: ${months.length} opciones`);
+  } catch (e) {
+    console.warn('[App] No se pudo cargar selector de meses:', e.message);
+  }
+}
+
+document.getElementById('sel-month').addEventListener('change', () => {
+  const { year, month } = getSelectedMonth();
+  loadTop10(year, month);
+  if (_nacLoaded) loadNacional(year, month);
+  if (_intLoaded) {
+    const ccaa = document.getElementById('sel-ccaa-frontur')?.value ?? 'Total Nacional';
+    refreshFrontur(ccaa, year, month);
+  }
+});
+
+// ── Top 10 auto-load ──────────────────────────────────────────────────────
+
+async function loadTop10(targetYear = null, targetMonth = null) {
+  try {
+    const top10 = await getTop10(10, targetYear, targetMonth);
     console.log('[loadTop10] getTop10() devuelve:', top10?.length, 'elementos', top10);
     if (!top10.length) return;
     const { year, month } = top10[0];
@@ -614,11 +660,11 @@ async function loadTop10() {
 // ── Vista Nacional ────────────────────────────────────────────────────────
 function _setText(id, v) { const el = document.getElementById(id); if (el) el.textContent = v; }
 
-async function loadNacional() {
+async function loadNacional(targetYear = null, targetMonth = null) {
   try {
     const [stats, top15, trend] = await Promise.all([
-      getNacionalStats(),
-      getTop15ByCCAA(),
+      getNacionalStats(targetYear, targetMonth),
+      getTop15ByCCAA(targetYear, targetMonth),
       getNacionalTrend(['2023', '2024', '2025']),
     ]);
 
@@ -670,9 +716,13 @@ async function loadInternacional() {
     const sel = document.getElementById('sel-ccaa-frontur');
     sel.innerHTML = '';
     _fronturCCAAs.forEach(c => sel.appendChild(new Option(c, c)));
-    sel.addEventListener('change', () => refreshFrontur(sel.value));
+    sel.addEventListener('change', () => {
+      const { year, month } = getSelectedMonth();
+      refreshFrontur(sel.value, year, month);
+    });
 
-    await refreshFrontur('Total Nacional');
+    const { year: ty, month: tm } = getSelectedMonth();
+    await refreshFrontur('Total Nacional', ty, tm);
     loadingEl.classList.add('d-none');
     chartsEl.classList.remove('d-none');
   } catch (e) {
@@ -683,10 +733,11 @@ async function loadInternacional() {
   }
 }
 
-async function refreshFrontur(ccaa) {
+async function refreshFrontur(ccaa, targetYear = null, targetMonth = null) {
   const [topPaises, top5Trend] = await Promise.all([
-    getFronturTopPaises(ccaa, 10),
-    getFronturTopPaises(ccaa, 5).then(top5 => getFronturTrend(top5.map(d => d.pais), ccaa)),
+    getFronturTopPaises(ccaa, 10, targetYear, targetMonth),
+    getFronturTopPaises(ccaa, 5, targetYear, targetMonth)
+      .then(top5 => getFronturTrend(top5.map(d => d.pais), ccaa)),
   ]);
   renderPaisesDonutChart('chart-paises-donut', topPaises);
   renderPaisesTrendChart('chart-paises-trend', top5Trend);
@@ -809,6 +860,7 @@ document.getElementById('lang-select').addEventListener('change', e => {
 (async function init() {
   showState('welcome');
   await Promise.allSettled([loadMunicipios(), prefetchAll()]);
+  await populateMonthSelector();
   loadTop10();
 })();
 </script>

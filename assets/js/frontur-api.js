@@ -1,11 +1,15 @@
 'use strict';
 
-// INE CSV for table 10822 — FRONTUR: turistas internacionales por país de residencia y CCAA
-// Column format (semicolon-separated):
-//   col 0: País de residencia  e.g. "Reino Unido"
-//   col 1: CCAA de destino     e.g. "Cataluña", "Total Nacional"
-//   col 2: Period              e.g. "2024M10"
-//   col 3: Value               e.g. "1.234.567"
+// INE CSV for table 10822 — FRONTUR: turistas internacionales
+//
+// The CSV uses a WIDE format:
+//   col 0: Países de residencia   e.g. "Reino Unido"
+//   col 1: Tipo de dato           e.g. "Dato base", "Acumulado en lo que va de año"
+//   col 2: Período                e.g. "2024M10"
+//   col 3…N: one column per CCAA  e.g. "Total Nacional", "Andalucía", "Cataluña", …
+//
+// We parse the header to discover CCAA column names, then emit one row
+// per (pais, ccaa) pair for every "Dato base" monthly observation.
 
 const FRONTUR_CSV_URL = 'https://www.ine.es/jaxiT3/files/t/csv_bdsc/10822.csv';
 
@@ -33,7 +37,8 @@ const COUNTRY_FLAGS = {
   'Brasil':         '🇧🇷',
 };
 
-let _fronturRows = null;
+let _fronturRows  = null;
+let _fronturCCAAs = null;   // sorted list of CCAA names found in header
 
 async function _loadFronturCSV() {
   if (_fronturRows) return _fronturRows;
@@ -42,34 +47,89 @@ async function _loadFronturCSV() {
   if (!res.ok) throw new Error(`Error ${res.status} cargando datos FRONTUR (tabla 10822)`);
   const text = await res.text();
 
-  const rows = [];
   const lines = text.split('\n');
+  const rows  = [];
+  if (lines.length < 2) { _fronturRows = rows; return rows; }
 
+  // ── Parse header ──────────────────────────────────────────────────────────
+  const headerCols = lines[0].trim().split(';').map(c => c.trim());
+  console.log('[FRONTUR] CSV header columns:', headerCols);
+
+  const idx = pat => headerCols.findIndex(c => pat.test(c));
+
+  // Locate known structural columns
+  const iPais    = (() => {
+    let i = idx(/pa[íi]s.*resid|resid.*pa[íi]s/i);
+    return i >= 0 ? i : idx(/pa[íi]s/i);
+  })();
+  const iTipo    = idx(/tipo/i);
+  const iPeriodo = idx(/per[íi]odo|period/i);
+  const iCCAA    = idx(/comunidad|ccaa|autonom/i);  // present in long format only
+
+  const isLongFormat = iCCAA >= 0;
+
+  // In wide format every column after the last dimension column is a CCAA
+  const lastDimCol = Math.max(
+    iPais    >= 0 ? iPais    : -1,
+    iTipo    >= 0 ? iTipo    : -1,
+    iPeriodo >= 0 ? iPeriodo : -1
+  );
+  const wideDataStart = lastDimCol + 1;
+  const wideLabels    = isLongFormat ? [] : headerCols.slice(wideDataStart);
+
+  // Column positions (with sensible fallbacks)
+  const cPais    = iPais    >= 0 ? iPais    : 0;
+  const cTipo    = iTipo    >= 0 ? iTipo    : (isLongFormat ? -1 : 1);
+  const cPeriodo = iPeriodo >= 0 ? iPeriodo : (isLongFormat ? (iCCAA > 0 ? iCCAA - 1 : 2) : 2);
+  const cCCAA    = isLongFormat ? iCCAA : -1;
+  const cValor   = isLongFormat ? (headerCols.length - 1) : -1;
+
+  console.log('[FRONTUR] format:', isLongFormat ? 'long' : 'wide',
+    '| pais:', cPais, 'tipo:', cTipo, 'period:', cPeriodo,
+    '| data:', isLongFormat
+      ? `ccaa=${cCCAA} val=${cValor}`
+      : `${wideLabels.length} CCAA cols from col ${wideDataStart}`);
+
+  // Store CCAA list for getFronturCCAAs()
+  _fronturCCAAs = isLongFormat ? null : wideLabels.slice();
+
+  // ── Parse data rows ───────────────────────────────────────────────────────
   for (let i = 1; i < lines.length; i++) {
     const line = lines[i].trim();
     if (!line) continue;
-
     const cols = line.split(';');
-    if (cols.length < 4) continue;
+    if (cols.length <= cPeriodo) continue;
 
-    const pais     = cols[0].trim();
-    const ccaa     = cols[1].trim();
-    const periodo  = cols[2].trim();
-    const valorRaw = cols[3].trim();
+    const pais    = cols[cPais]?.trim()    ?? '';
+    const tipo    = cTipo >= 0 ? (cols[cTipo]?.trim() ?? '') : '';
+    const periodo = cols[cPeriodo]?.trim() ?? '';
 
     if (!pais || !periodo) continue;
-    // Skip aggregate rows for country dimension (keep CCAA totals)
     if (/^total/i.test(pais)) continue;
+    // Skip "Acumulado en lo que va de año" — keep only "Dato base" monthly rows
+    if (tipo && /acumulado/i.test(tipo)) continue;
 
-    const m = periodo.match(/^(\d{4})M(\d{2})$/);
-    if (!m) continue;
-    const year  = parseInt(m[1], 10);
-    const month = parseInt(m[2], 10);
+    const dateM = periodo.match(/^(\d{4})M(\d{2})$/);
+    if (!dateM) continue;
+    const year  = parseInt(dateM[1], 10);
+    const month = parseInt(dateM[2], 10);
 
-    const value = parseFloat(valorRaw.replace(/\./g, '').replace(',', '.'));
-    if (isNaN(value) || value <= 0) continue;
-
-    rows.push({ pais, ccaa, year, month, value });
+    if (!isLongFormat) {
+      // Wide format: emit one record per CCAA column
+      for (let j = 0; j < wideLabels.length; j++) {
+        const valorRaw = cols[wideDataStart + j]?.trim() ?? '';
+        const value    = parseFloat(valorRaw.replace(/\./g, '').replace(',', '.'));
+        if (isNaN(value) || value <= 0) continue;
+        rows.push({ pais, ccaa: wideLabels[j], year, month, value });
+      }
+    } else {
+      // Long format: one record per line
+      const ccaa     = cols[cCCAA]?.trim()  ?? '';
+      const valorRaw = cols[cValor]?.trim() ?? '';
+      const value    = parseFloat(valorRaw.replace(/\./g, '').replace(',', '.'));
+      if (isNaN(value) || value <= 0) continue;
+      rows.push({ pais, ccaa, year, month, value });
+    }
   }
 
   _fronturRows = rows;
@@ -77,8 +137,8 @@ async function _loadFronturCSV() {
   return rows;
 }
 
-// Returns [{pais, label (with flag), value, year, month}] sorted desc for the latest month
-async function getFronturTopPaises(ccaaFilter = 'Total Nacional', n = 10) {
+// Returns [{pais, label (with flag), value, year, month}] sorted desc for the given month
+async function getFronturTopPaises(ccaaFilter = 'Total Nacional', n = 10, targetYear = null, targetMonth = null) {
   const rows = await _loadFronturCSV();
 
   const isTotal = /total|nacional/i.test(ccaaFilter);
@@ -87,9 +147,14 @@ async function getFronturTopPaises(ccaaFilter = 'Total Nacional', n = 10) {
   );
   if (!subset.length) return [];
 
-  const latest = subset.reduce((b, r) =>
-    r.year > b.year || (r.year === b.year && r.month > b.month) ? r : b, subset[0]);
-  const { year, month } = latest;
+  let year, month;
+  if (targetYear && targetMonth) {
+    year = targetYear; month = targetMonth;
+  } else {
+    const latest = subset.reduce((b, r) =>
+      r.year > b.year || (r.year === b.year && r.month > b.month) ? r : b, subset[0]);
+    year = latest.year; month = latest.month;
+  }
 
   const map = {};
   for (const r of subset.filter(r => r.year === year && r.month === month)) {
@@ -131,6 +196,20 @@ async function getFronturTrend(paises, ccaaFilter = 'Total Nacional') {
 // Returns sorted list of unique CCAA values found in the data
 async function getFronturCCAAs() {
   const rows = await _loadFronturCSV();
-  const seen = new Set(rows.map(r => r.ccaa).filter(c => !/total|nacional/i.test(c)));
+
+  // If we detected CCAA names from the wide-format header, use them directly
+  if (_fronturCCAAs && _fronturCCAAs.length) {
+    const ccaas = _fronturCCAAs
+      .filter(c => !/total|nacional/i.test(c))
+      .sort((a, b) => a.localeCompare(b, 'es'));
+    return ['Total Nacional', ...ccaas];
+  }
+
+  // Fallback: derive from row data, filtering out non-CCAA strings
+  const KNOWN_NON_CCAA = /tipo|dato|acumulado|anual|base|trimest/i;
+  const seen = new Set(
+    rows.map(r => r.ccaa)
+        .filter(c => c && !KNOWN_NON_CCAA.test(c) && !/total|nacional/i.test(c))
+  );
   return ['Total Nacional', ...[...seen].sort((a, b) => a.localeCompare(b, 'es'))];
 }

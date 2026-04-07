@@ -138,18 +138,22 @@ async function getMunicipioData(municipioName) {
 }
 
 // Returns [{municipio, year, month, value}] for the top N municipios by
-// pernoctaciones totales in the latest month available across all municipios.
-async function getTop10(n = 10) {
+// pernoctaciones totales in the given (or latest) month.
+async function getTop10(n = 10, targetYear = null, targetMonth = null) {
   const rows = await _loadCSV();
 
-  // Find the latest month present in pernoctaciones data
   const perRows = rows.filter(r => /pernoct/i.test(r.indicador));
   if (!perRows.length) return [];
 
-  const latest = perRows.reduce((best, r) =>
-    r.year > best.year || (r.year === best.year && r.month > best.month) ? r : best
-  , perRows[0]);
-  const { year, month } = latest;
+  let year, month;
+  if (targetYear && targetMonth) {
+    year = targetYear; month = targetMonth;
+  } else {
+    const latest = perRows.reduce((best, r) =>
+      r.year > best.year || (r.year === best.year && r.month > best.month) ? r : best
+    , perRows[0]);
+    year = latest.year; month = latest.month;
+  }
   console.log(`[getTop10] último mes encontrado: ${year}-${String(month).padStart(2,'0')}, filas pernoct total: ${perRows.length}`);
 
   // Sum both residencias per municipio for that month
@@ -169,15 +173,20 @@ async function getTop10(n = 10) {
 
 // ── National aggregate helpers ─────────────────────────────────────────────
 
-async function getNacionalStats() {
+async function getNacionalStats(targetYear = null, targetMonth = null) {
   const rows = await _loadCSV();
   const perRows = rows.filter(r => /pernoct/i.test(r.indicador));
   const viaRows = rows.filter(r => /viajero/i.test(r.indicador));
   if (!perRows.length) return null;
 
-  const latest = perRows.reduce((b, r) =>
-    r.year > b.year || (r.year === b.year && r.month > b.month) ? r : b, perRows[0]);
-  const { year, month } = latest;
+  let year, month;
+  if (targetYear && targetMonth) {
+    year = targetYear; month = targetMonth;
+  } else {
+    const latest = perRows.reduce((b, r) =>
+      r.year > b.year || (r.year === b.year && r.month > b.month) ? r : b, perRows[0]);
+    year = latest.year; month = latest.month;
+  }
 
   const sumMonth = (arr, y, m) =>
     arr.filter(r => r.year === y && r.month === m).reduce((s, r) => s + r.value, 0);
@@ -191,14 +200,19 @@ async function getNacionalStats() {
   };
 }
 
-async function getTop15ByCCAA() {
+async function getTop15ByCCAA(targetYear = null, targetMonth = null) {
   const rows = await _loadCSV();
   const perRows = rows.filter(r => /pernoct/i.test(r.indicador));
   if (!perRows.length) return [];
 
-  const latest = perRows.reduce((b, r) =>
-    r.year > b.year || (r.year === b.year && r.month > b.month) ? r : b, perRows[0]);
-  const { year, month } = latest;
+  let year, month;
+  if (targetYear && targetMonth) {
+    year = targetYear; month = targetMonth;
+  } else {
+    const latest = perRows.reduce((b, r) =>
+      r.year > b.year || (r.year === b.year && r.month > b.month) ? r : b, perRows[0]);
+    year = latest.year; month = latest.month;
+  }
 
   const ccaaMap = {};
   for (const r of perRows.filter(r => r.year === year && r.month === month)) {
@@ -221,6 +235,17 @@ async function getNacionalTrend(yearsFilter = ['2023', '2024', '2025']) {
   }
   return Object.values(map).sort((a, b) =>
     a.year !== b.year ? a.year - b.year : a.month - b.month);
+}
+
+// Returns the last N available months (from pernoctaciones data) sorted newest-first
+async function getAvailableMonths(n = 24) {
+  const rows = await _loadCSV();
+  const perRows = rows.filter(r => /pernoct/i.test(r.indicador));
+  const seen = new Set(perRows.map(r => `${r.year}-${String(r.month).padStart(2, '0')}`));
+  return [...seen].sort().reverse().slice(0, n).map(key => {
+    const [y, m] = key.split('-');
+    return { year: parseInt(y, 10), month: parseInt(m, 10), key };
+  });
 }
 
 // Warm the cache on page load so the first Ver datos click is instant

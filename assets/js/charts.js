@@ -30,8 +30,17 @@ function _destroy(id) {
   if (_activeCharts[id]) { _activeCharts[id].destroy(); delete _activeCharts[id]; }
 }
 
-function _destroyAll() {
-  Object.keys(_activeCharts).forEach(_destroy);
+// Charts that belong to other tabs — preserved when municipio tab re-renders
+const _PERSISTENT_CHARTS = new Set([
+  'chart-top10', 'chart-ccaa', 'chart-nac-trend',
+  'chart-paises-donut', 'chart-paises-trend',
+]);
+
+function _destroyAll(excludePersistent = true) {
+  Object.keys(_activeCharts).forEach(id => {
+    if (excludePersistent && _PERSISTENT_CHARTS.has(id)) return;
+    _destroy(id);
+  });
   // Remove injected toggle buttons so they don't stack on re-render
   document.querySelectorAll('[id^="toggle-chart-"]').forEach(el => el.remove());
 }
@@ -250,6 +259,7 @@ function renderTop10Chart(canvasId, top10) {
     options: {
       indexAxis: 'y',
       responsive: true,
+      maintainAspectRatio: false,
       plugins: {
         legend: { display: false },
         title:  { display: true, text: `Top 10 por noches de estancia — ${MESES[month - 1]} ${year}`, font: { size: 13 } },
