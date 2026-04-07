@@ -223,7 +223,7 @@ function _barOpts(title) {
 // ── Stat cards ─────────────────────────────────────────────────────────────
 
 function updateStatCards(viajeros, pernoctaciones, nacionales, extranjeros) {
-  const last = arr => arr.length ? arr[arr.length - 1] : null;
+  const last = arr => arr?.length ? arr[arr.length - 1] : null;
 
   const lv = last(viajeros);
   const lp = last(pernoctaciones);
