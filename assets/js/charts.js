@@ -100,15 +100,32 @@ function renderDonutChart(canvasId, nacionales, extranjeros) {
   const ctx = document.getElementById(canvasId)?.getContext('2d');
   if (!ctx) return;
 
-  const lastVal = arr => arr.length ? arr[arr.length - 1].value : 0;
-  const nac = lastVal(nacionales);
-  const ext = lastVal(extranjeros);
+  const lastEntry = arr => arr?.length ? arr[arr.length - 1] : null;
+  const ln = lastEntry(nacionales);
+  const le = lastEntry(extranjeros);
+  const nac = ln?.value ?? 0;
+  const ext = le?.value ?? 0;
   if (!nac && !ext) return;
+
+  const total = nac + ext;
+  const pctNac = total ? (nac / total * 100).toFixed(1) : 0;
+  const pctExt = total ? (ext / total * 100).toFixed(1) : 0;
+
+  // Update the two residency stat cards
+  const setText = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+  const mes = ln ? `${MESES[ln.month - 1]} ${ln.year}` : (le ? `${MESES[le.month - 1]} ${le.year}` : '');
+  setText('card-nac-val', nac ? fmtNum(nac) : '—');
+  setText('card-nac-sub', nac ? mes : 'Sin datos');
+  setText('card-ext-val', ext ? fmtNum(ext) : '—');
+  setText('card-ext-sub', ext ? mes : 'Sin datos');
 
   _activeCharts[canvasId] = new Chart(ctx, {
     type: 'doughnut',
     data: {
-      labels: ['Residentes en España', 'Residentes en el extranjero'],
+      labels: [
+        `Nacionales: ${fmtNum(nac)} (${pctNac}%)`,
+        `Extranjeros: ${fmtNum(ext)} (${pctExt}%)`,
+      ],
       datasets: [{
         data: [nac, ext],
         backgroundColor: ['rgba(13,110,253,0.8)', 'rgba(255,193,7,0.85)'],
@@ -119,9 +136,9 @@ function renderDonutChart(canvasId, nacionales, extranjeros) {
     options: {
       responsive: true,
       plugins: {
-        legend: { position: 'bottom', labels: { boxWidth: 12 } },
+        legend: { position: 'bottom', labels: { boxWidth: 14, padding: 16 } },
         title:  { display: true, text: 'Viajeros — nacional vs extranjero (último mes)', font: { size: 13 } },
-        tooltip: { callbacks: { label: c => ` ${c.label}: ${fmtNum(c.parsed)}` } },
+        tooltip: { callbacks: { label: c => ` ${c.label}` } },
       },
     },
   });
