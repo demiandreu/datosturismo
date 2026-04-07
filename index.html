@@ -701,7 +701,6 @@ async function loadNacional(targetYear = null, targetMonth = null) {
 }
 
 // ── Internacional (FRONTUR) ───────────────────────────────────────────────
-let _fronturCCAAs = [];
 
 async function loadInternacional() {
   const loadingEl = document.getElementById('int-loading');
@@ -712,10 +711,10 @@ async function loadInternacional() {
   chartsEl.classList.add('d-none');
 
   try {
-    _fronturCCAAs = await getFronturCCAAs();
+    const ccaaList = await getFronturCCAAs();
     const sel = document.getElementById('sel-ccaa-frontur');
     sel.innerHTML = '';
-    _fronturCCAAs.forEach(c => sel.appendChild(new Option(c, c)));
+    ccaaList.forEach(c => sel.appendChild(new Option(c, c)));
     sel.addEventListener('change', () => {
       const { year, month } = getSelectedMonth();
       refreshFrontur(sel.value, year, month);
