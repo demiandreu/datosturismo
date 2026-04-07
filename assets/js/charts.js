@@ -225,24 +225,30 @@ function _barOpts(title) {
 function updateStatCards(viajeros, pernoctaciones, nacionales, extranjeros) {
   const last = arr => arr?.length ? arr[arr.length - 1] : null;
 
+  const setText = (id, value) => {
+    const el = document.getElementById(id);
+    if (!el) { console.log(`updateStatCards: element #${id} not found in DOM`); return; }
+    el.textContent = value;
+  };
+
   const lv = last(viajeros);
   const lp = last(pernoctaciones);
 
-  document.getElementById('card-viajeros-val').textContent  = lv ? fmtNum(lv.value) : '—';
-  document.getElementById('card-viajeros-sub').textContent  = lv ? `${MESES[lv.month - 1]} ${lv.year}` : 'Sin datos';
-  document.getElementById('card-pernoct-val').textContent   = lp ? fmtNum(lp.value) : '—';
-  document.getElementById('card-pernoct-sub').textContent   = lp ? `${MESES[lp.month - 1]} ${lp.year}` : 'Sin datos';
+  setText('card-viajeros-val', lv ? fmtNum(lv.value) : '—');
+  setText('card-viajeros-sub', lv ? `${MESES[lv.month - 1]} ${lv.year}` : 'Sin datos');
+  setText('card-pernoct-val',  lp ? fmtNum(lp.value) : '—');
+  setText('card-pernoct-sub',  lp ? `${MESES[lp.month - 1]} ${lp.year}` : 'Sin datos');
 
   // Third card: % extranjero viajeros
   const ln = last(nacionales);
   const le = last(extranjeros);
   if (ln && le && ln.year === le.year && ln.month === le.month) {
     const pct = (le.value / (ln.value + le.value) * 100).toFixed(1);
-    document.getElementById('card-extra-val').textContent = pct + '%';
-    document.getElementById('card-extra-sub').textContent = `Extranjeros · ${MESES[le.month - 1]} ${le.year}`;
+    setText('card-ocup-val', pct + '%');
+    setText('card-ocup-sub', `Extranjeros · ${MESES[le.month - 1]} ${le.year}`);
   } else {
-    document.getElementById('card-extra-val').textContent = '—';
-    document.getElementById('card-extra-sub').textContent = 'Sin datos';
+    setText('card-ocup-val', '—');
+    setText('card-ocup-sub', 'Sin datos');
   }
 }
 
