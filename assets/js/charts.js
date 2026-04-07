@@ -223,6 +223,7 @@ function _barOpts(title) {
 // ── Stat cards ─────────────────────────────────────────────────────────────
 
 function updateStatCards(viajeros, pernoctaciones, nacionales, extranjeros) {
+  console.log('[updateStatCards] viajeros:', viajeros?.length, 'pernoct:', pernoctaciones?.length, 'nac:', nacionales?.length, 'ext:', extranjeros?.length);
   const last = arr => arr?.length ? arr[arr.length - 1] : null;
 
   const setText = (id, value) => {

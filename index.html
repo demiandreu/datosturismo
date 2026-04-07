@@ -326,7 +326,7 @@ btnVer.addEventListener('click', async () => {
     document.getElementById('no-data-msg').classList.toggle('d-none', !!hasData);
 
     showState('dashboard');
-    renderDashboard(munData.viajeros, munData.pernoctaciones, []);
+    renderDashboard(munData, null, null);
 
   } catch (e) {
     console.error('[App] Error cargando datos:', e);
