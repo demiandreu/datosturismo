@@ -67,10 +67,8 @@ footer a:hover {
   border-top-right-radius: 0;
 }
 
-/* Tab nav */
-#main-tabs .nav-link { border-bottom: 3px solid transparent; border-radius: 0; padding: .6rem 1rem; }
-#main-tabs .nav-link.active { border-bottom-color: #0d6efd; color: #0d6efd; background: transparent; }
-#main-tabs .nav-link:not(.active) { color: #6c757d; }
+/* Tab nav — keep Bootstrap defaults, just tune padding */
+#main-tabs .nav-link { padding: .6rem 1.1rem; font-size: .9rem; }
 
 /* CCAA / país charts can be taller */
 #pane-nacional .chart-card canvas,

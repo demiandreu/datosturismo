@@ -150,6 +150,7 @@ async function getTop10(n = 10) {
     r.year > best.year || (r.year === best.year && r.month > best.month) ? r : best
   , perRows[0]);
   const { year, month } = latest;
+  console.log(`[getTop10] último mes encontrado: ${year}-${String(month).padStart(2,'0')}, filas pernoct total: ${perRows.length}`);
 
   // Sum both residencias per municipio for that month
   const map = {};
@@ -158,10 +159,12 @@ async function getTop10(n = 10) {
     map[r.municipio] = (map[r.municipio] ?? 0) + r.value;
   }
 
-  return Object.entries(map)
+  const top = Object.entries(map)
     .map(([municipio, value]) => ({ municipio, year, month, value }))
     .sort((a, b) => b.value - a.value)
     .slice(0, n);
+  console.log('[getTop10] resultado:', top);
+  return top;
 }
 
 // ── National aggregate helpers ─────────────────────────────────────────────

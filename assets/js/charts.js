@@ -228,8 +228,10 @@ function renderComparisonChart(canvasId, name1, data1, name2, data2) {
 
 function renderTop10Chart(canvasId, top10) {
   _destroy(canvasId);
-  const ctx = document.getElementById(canvasId)?.getContext('2d');
-  if (!ctx || !top10.length) return;
+  const canvas = document.getElementById(canvasId);
+  console.log(`[renderTop10Chart] canvas #${canvasId}:`, canvas, '| datos:', top10?.length);
+  const ctx = canvas?.getContext('2d');
+  if (!ctx || !top10?.length) return;
 
   const { year, month } = top10[0];
 
