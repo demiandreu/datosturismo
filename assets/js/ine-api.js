@@ -5,7 +5,7 @@
 //   "38001 Adeje;Viajero;Residentes en España;2026M02;1.548"
 //   col 0: municipio code + name   e.g. "38001 Adeje"
 //   col 1: indicator               e.g. "Viajero", "Pernoctaciones"
-//   col 2: residency type          e.g. "Residentes en España", "Total"
+//   col 2: residency type          e.g. "Residentes en España", "Residentes en el Extranjero"
 //   col 3: period                  e.g. "2026M02"
 //   col 4: value (ES number fmt)   e.g. "1.548"  → 1548  (dot = thousands sep)
 
@@ -76,39 +76,32 @@ async function getMunicipioData(municipioName) {
   const name  = municipioName.toLowerCase();
   const match = rows.filter(r => r.municipio.toLowerCase() === name);
 
-  // Use "Total" residency to avoid double-counting; fall back to any rows if absent
-  const byIndicator = (keyword, residencia = 'total') => {
-    const subset = match.filter(r =>
-      new RegExp(keyword, 'i').test(r.indicador) &&
-      r.residencia.toLowerCase() === residencia
+  // Sum España + Extranjero per month to derive totals (CSV has no "Total" row)
+  const sumByMonth = keyword => {
+    const subset = match.filter(r => new RegExp(keyword, 'i').test(r.indicador));
+    const map = {};
+    for (const r of subset) {
+      const key = `${r.year}-${r.month}`;
+      map[key] = { year: r.year, month: r.month, value: (map[key]?.value ?? 0) + r.value };
+    }
+    return Object.values(map).sort((a, b) =>
+      a.year !== b.year ? a.year - b.year : a.month - b.month
     );
-    if (subset.length) return subset;
-    // fallback: any residency
-    return match.filter(r => new RegExp(keyword, 'i').test(r.indicador));
   };
 
-  const vRows = byIndicator('viajero');
-  const pRows = byIndicator('pernoct');
-
-  // Sort chronologically
   const sort = arr => [...arr].sort((a, b) =>
     a.year !== b.year ? a.year - b.year : a.month - b.month
   );
 
-  // Total viajeros/pernoctaciones (for charts)
-  const totalViajeros = sort(
-    match.filter(r => new RegExp('viajero', 'i').test(r.indicador) && /total/i.test(r.residencia))
-  );
-  const viajeros       = totalViajeros.length ? totalViajeros : sort(vRows);
-  const pernoctaciones = sort(pRows.filter(r => /total/i.test(r.residencia))).length
-    ? sort(pRows.filter(r => /total/i.test(r.residencia)))
-    : sort(pRows);
+  const viajeros       = sumByMonth('viajero');
+  const pernoctaciones = sumByMonth('pernoct');
 
-  // Split by residency for donut / stat card
-  const nacionales  = sort(match.filter(r => new RegExp('viajero', 'i').test(r.indicador) && /españa/i.test(r.residencia)));
-  const extranjeros = sort(match.filter(r => new RegExp('viajero', 'i').test(r.indicador) && /extranjero/i.test(r.residencia)));
+  // Separate residency series for donut chart
+  const nacionales  = sort(match.filter(r => /viajero/i.test(r.indicador) && /españa/i.test(r.residencia)));
+  const extranjeros = sort(match.filter(r => /viajero/i.test(r.indicador) && /extranjero/i.test(r.residencia)));
 
   console.log(`[INE] "${municipioName}": viajeros=${viajeros.length} pts, pernoct=${pernoctaciones.length} pts, nac=${nacionales.length}, ext=${extranjeros.length}`);
+  console.log('  primeros 5 viajeros sumados:', viajeros.slice(0, 5));
   if (viajeros.length)       console.log('  último viajeros:', viajeros[viajeros.length - 1]);
   if (pernoctaciones.length) console.log('  último pernoct:', pernoctaciones[pernoctaciones.length - 1]);
 
