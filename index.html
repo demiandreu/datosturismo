@@ -109,19 +109,6 @@
 <!-- Pane: Por municipio -->
 <div id="pane-municipio">
 
-<!-- ── Top 10 (always visible on this tab) ───────────────────────────── -->
-<section class="container-fluid px-4 pt-4 pb-2" id="section-top10">
-  <div class="card border-0 shadow-sm">
-    <div class="card-body">
-      <h5 class="fw-bold mb-1" id="top10-title" data-i18n="top10_titulo">Top 10 destinos más visitados</h5>
-      <p class="text-muted small mb-3" id="top10-subtitle">Cargando…</p>
-      <div style="position:relative;height:360px">
-        <canvas id="chart-top10"></canvas>
-      </div>
-    </div>
-  </div>
-</section>
-
 <main id="main-municipio" class="container-fluid py-4 px-4 d-none">
 
   <!-- Loading spinner -->
@@ -300,6 +287,19 @@
   </div><!-- /ui-dashboard -->
 
 </main>
+
+<!-- ── Top 10 (below dashboard when municipio selected, at top otherwise) -->
+<section class="container-fluid px-4 pt-4 pb-5" id="section-top10">
+  <div class="card border-0 shadow-sm">
+    <div class="card-body">
+      <h5 class="fw-bold mb-1" id="top10-title" data-i18n="top10_titulo">Top 10 destinos más visitados</h5>
+      <p class="text-muted small mb-3" id="top10-subtitle">Cargando…</p>
+      <div style="position:relative;height:360px">
+        <canvas id="chart-top10"></canvas>
+      </div>
+    </div>
+  </div>
+</section>
 
 </div><!-- /pane-municipio -->
 
@@ -571,6 +571,7 @@ btnVer.addEventListener('click', async () => {
     document.getElementById('no-data-msg').classList.toggle('d-none',
       !!(munData.viajeros.length || munData.pernoctaciones.length));
     showState('dashboard');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
     renderDashboard(munData, null, null);
   } catch (e) {
     console.error('[App] Error cargando datos:', e);
