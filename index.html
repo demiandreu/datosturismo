@@ -53,7 +53,22 @@
       </li>
       <li class="nav-item" role="presentation">
         <button class="nav-link fw-semibold" id="tab-nacional-btn" data-tab="nacional" type="button">
-          🇪🇸 Vista nacional
+          🇪🇸 Apartamentos
+        </button>
+      </li>
+      <li class="nav-item" role="presentation">
+        <button class="nav-link fw-semibold" id="tab-hoteles-btn" data-tab="hoteles" type="button">
+          🏨 Hoteles
+        </button>
+      </li>
+      <li class="nav-item" role="presentation">
+        <button class="nav-link fw-semibold" id="tab-rural-btn" data-tab="rural" type="button">
+          🌿 Rural
+        </button>
+      </li>
+      <li class="nav-item" role="presentation">
+        <button class="nav-link fw-semibold" id="tab-gasto-btn" data-tab="gasto" type="button">
+          💶 Gasto
         </button>
       </li>
       <li class="nav-item" role="presentation">
@@ -388,6 +403,204 @@
   </div>
 </div><!-- /pane-nacional -->
 
+<!-- Pane: Hoteles ──────────────────────────────────────────────────────────── -->
+<div id="pane-hoteles" class="d-none">
+  <div class="container-fluid py-4 px-4">
+    <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-4">
+      <div>
+        <h4 class="mb-0 fw-bold">🏨 Hoteles en España</h4>
+        <small class="text-muted">Encuesta de Ocupación Hotelera (EOH) · INE · Datos nacionales</small>
+      </div>
+      <span class="badge bg-secondary fw-normal small">INE · EOH · Tabla 2074</span>
+    </div>
+    <div id="hot-loading" class="text-center py-5 d-none">
+      <div class="spinner-border text-primary" role="status" style="width:2.5rem;height:2.5rem;"></div>
+      <p class="mt-3 text-muted small">Cargando datos hoteleros…</p>
+    </div>
+    <div id="hot-error" class="d-none">
+      <div class="alert alert-warning">No se pudieron cargar los datos de hoteles. <span id="hot-error-msg"></span></div>
+    </div>
+    <div id="hot-content">
+      <!-- Stat cards -->
+      <div class="row g-3 mb-4">
+        <div class="col-sm-6 col-lg-3">
+          <div class="card border-0 shadow-sm h-100"><div class="card-body d-flex align-items-start gap-3">
+            <div class="stat-card-icon bg-primary-subtle text-primary">🧳</div>
+            <div><p class="text-muted small mb-1">Viajeros en hoteles</p>
+              <h3 class="fw-bold text-primary mb-0" id="hot-viajeros-val">—</h3>
+              <small class="text-muted" id="hot-viajeros-sub">—</small></div>
+          </div></div>
+        </div>
+        <div class="col-sm-6 col-lg-3">
+          <div class="card border-0 shadow-sm h-100"><div class="card-body d-flex align-items-start gap-3">
+            <div class="stat-card-icon bg-primary-subtle text-primary">🌙</div>
+            <div><p class="text-muted small mb-1">Noches de estancia</p>
+              <h3 class="fw-bold text-primary mb-0" id="hot-pernoct-val">—</h3>
+              <small class="text-muted" id="hot-pernoct-sub">—</small></div>
+          </div></div>
+        </div>
+        <div class="col-sm-6 col-lg-3">
+          <div class="card border-0 shadow-sm h-100"><div class="card-body d-flex align-items-start gap-3">
+            <div class="stat-card-icon bg-success-subtle text-success">📈</div>
+            <div><p class="text-muted small mb-1">Variación interanual noches</p>
+              <h3 class="fw-bold mb-0" id="hot-variacion-val">—</h3>
+              <small class="text-muted" id="hot-variacion-sub">—</small></div>
+          </div></div>
+        </div>
+        <div class="col-sm-6 col-lg-3">
+          <div class="card border-0 shadow-sm h-100"><div class="card-body d-flex align-items-start gap-3">
+            <div class="stat-card-icon bg-success-subtle text-success">🛏️</div>
+            <div><p class="text-muted small mb-1">Estancia media</p>
+              <h3 class="fw-bold text-success mb-0" id="hot-estancia-val">—</h3>
+              <small class="text-muted" id="hot-estancia-sub">—</small></div>
+          </div></div>
+        </div>
+      </div>
+      <!-- Charts -->
+      <div class="row g-4">
+        <div class="col-lg-7">
+          <div class="card border-0 shadow-sm chart-card" style="max-height:none">
+            <div class="card-body"><canvas id="chart-hot-ccaa" height="420"></canvas></div>
+          </div>
+        </div>
+        <div class="col-lg-5">
+          <div class="card border-0 shadow-sm chart-card">
+            <div class="card-body"><canvas id="chart-hot-trend" height="280"></canvas></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div><!-- /pane-hoteles -->
+
+<!-- Pane: Rural ────────────────────────────────────────────────────────────── -->
+<div id="pane-rural" class="d-none">
+  <div class="container-fluid py-4 px-4">
+    <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-4">
+      <div>
+        <h4 class="mb-0 fw-bold">🌿 Turismo Rural en España</h4>
+        <small class="text-muted">Encuesta de Ocupación en Turismo Rural (EOTR) · INE</small>
+      </div>
+      <span class="badge bg-secondary fw-normal small">INE · EOTR · Tabla 2070</span>
+    </div>
+    <div id="rur-loading" class="text-center py-5 d-none">
+      <div class="spinner-border text-success" role="status" style="width:2.5rem;height:2.5rem;"></div>
+      <p class="mt-3 text-muted small">Cargando datos de turismo rural…</p>
+    </div>
+    <div id="rur-error" class="d-none">
+      <div class="alert alert-warning">No se pudieron cargar los datos de turismo rural. <span id="rur-error-msg"></span></div>
+    </div>
+    <div id="rur-content">
+      <div class="row g-3 mb-4">
+        <div class="col-sm-6 col-lg-3">
+          <div class="card border-0 shadow-sm h-100"><div class="card-body d-flex align-items-start gap-3">
+            <div class="stat-card-icon bg-success-subtle text-success">🧳</div>
+            <div><p class="text-muted small mb-1">Viajeros en rural</p>
+              <h3 class="fw-bold text-success mb-0" id="rur-viajeros-val">—</h3>
+              <small class="text-muted" id="rur-viajeros-sub">—</small></div>
+          </div></div>
+        </div>
+        <div class="col-sm-6 col-lg-3">
+          <div class="card border-0 shadow-sm h-100"><div class="card-body d-flex align-items-start gap-3">
+            <div class="stat-card-icon bg-success-subtle text-success">🌙</div>
+            <div><p class="text-muted small mb-1">Noches de estancia</p>
+              <h3 class="fw-bold text-success mb-0" id="rur-pernoct-val">—</h3>
+              <small class="text-muted" id="rur-pernoct-sub">—</small></div>
+          </div></div>
+        </div>
+        <div class="col-sm-6 col-lg-3">
+          <div class="card border-0 shadow-sm h-100"><div class="card-body d-flex align-items-start gap-3">
+            <div class="stat-card-icon bg-success-subtle text-success">📈</div>
+            <div><p class="text-muted small mb-1">Variación interanual noches</p>
+              <h3 class="fw-bold mb-0" id="rur-variacion-val">—</h3>
+              <small class="text-muted" id="rur-variacion-sub">—</small></div>
+          </div></div>
+        </div>
+        <div class="col-sm-6 col-lg-3">
+          <div class="card border-0 shadow-sm h-100"><div class="card-body d-flex align-items-start gap-3">
+            <div class="stat-card-icon bg-success-subtle text-success">🛏️</div>
+            <div><p class="text-muted small mb-1">Estancia media</p>
+              <h3 class="fw-bold text-success mb-0" id="rur-estancia-val">—</h3>
+              <small class="text-muted" id="rur-estancia-sub">—</small></div>
+          </div></div>
+        </div>
+      </div>
+      <div class="row g-4">
+        <div class="col-lg-7">
+          <div class="card border-0 shadow-sm chart-card" style="max-height:none">
+            <div class="card-body"><canvas id="chart-rur-ccaa" height="420"></canvas></div>
+          </div>
+        </div>
+        <div class="col-lg-5">
+          <div class="card border-0 shadow-sm chart-card">
+            <div class="card-body"><canvas id="chart-rur-trend" height="280"></canvas></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div><!-- /pane-rural -->
+
+<!-- Pane: Gasto ────────────────────────────────────────────────────────────── -->
+<div id="pane-gasto" class="d-none">
+  <div class="container-fluid py-4 px-4">
+    <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-4">
+      <div>
+        <h4 class="mb-0 fw-bold">💶 Gasto Turístico Internacional</h4>
+        <small class="text-muted">EGATUR · INE · Gasto de turistas internacionales por CCAA destino</small>
+      </div>
+      <span class="badge bg-secondary fw-normal small">INE · EGATUR · Tabla 10839</span>
+    </div>
+    <div id="gas-loading" class="text-center py-5 d-none">
+      <div class="spinner-border text-warning" role="status" style="width:2.5rem;height:2.5rem;"></div>
+      <p class="mt-3 text-muted small">Cargando datos de gasto turístico…</p>
+    </div>
+    <div id="gas-error" class="d-none">
+      <div class="alert alert-warning">No se pudieron cargar los datos de gasto. <span id="gas-error-msg"></span></div>
+    </div>
+    <div id="gas-content">
+      <div class="row g-3 mb-4">
+        <div class="col-sm-6 col-lg-4">
+          <div class="card border-0 shadow-sm h-100"><div class="card-body d-flex align-items-start gap-3">
+            <div class="stat-card-icon bg-warning-subtle text-warning">💶</div>
+            <div><p class="text-muted small mb-1">Gasto total turistas internacionales</p>
+              <h3 class="fw-bold text-warning mb-0" id="gas-total-val">—</h3>
+              <small class="text-muted" id="gas-total-sub">—</small></div>
+          </div></div>
+        </div>
+        <div class="col-sm-6 col-lg-4">
+          <div class="card border-0 shadow-sm h-100"><div class="card-body d-flex align-items-start gap-3">
+            <div class="stat-card-icon bg-warning-subtle text-warning">📈</div>
+            <div><p class="text-muted small mb-1">Variación interanual</p>
+              <h3 class="fw-bold mb-0" id="gas-variacion-val">—</h3>
+              <small class="text-muted" id="gas-variacion-sub">—</small></div>
+          </div></div>
+        </div>
+        <div class="col-sm-6 col-lg-4">
+          <div class="card border-0 shadow-sm h-100"><div class="card-body d-flex align-items-start gap-3">
+            <div class="stat-card-icon bg-warning-subtle text-warning">🏆</div>
+            <div><p class="text-muted small mb-1">CCAA con mayor gasto</p>
+              <h3 class="fw-bold text-warning mb-0" id="gas-top-val">—</h3>
+              <small class="text-muted" id="gas-top-sub">—</small></div>
+          </div></div>
+        </div>
+      </div>
+      <div class="row g-4">
+        <div class="col-lg-7">
+          <div class="card border-0 shadow-sm chart-card" style="max-height:none">
+            <div class="card-body"><canvas id="chart-gas-ccaa" height="420"></canvas></div>
+          </div>
+        </div>
+        <div class="col-lg-5">
+          <div class="card border-0 shadow-sm chart-card">
+            <div class="card-body"><canvas id="chart-gas-trend" height="280"></canvas></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div><!-- /pane-gasto -->
+
 <!-- Pane: Internacional -->
 <div id="pane-internacional" class="d-none">
   <div class="container-fluid py-4 px-4">
@@ -465,6 +678,7 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
 <script src="assets/js/ine-api.js"></script>
 <script src="assets/js/frontur-api.js"></script>
+<script src="assets/js/stats-api.js"></script>
 <script src="assets/js/charts.js"></script>
 
 <script>
@@ -479,8 +693,11 @@ const badgeMun       = document.getElementById('municipios-badge');
 let _allLocations = [];
 
 // ── Tab switching ─────────────────────────────────────────────────────────
-const TABS      = ['municipio', 'nacional', 'internacional'];
+const TABS = ['municipio', 'nacional', 'hoteles', 'rural', 'gasto', 'internacional'];
 let _nacLoaded  = false;
+let _hotLoaded  = false;
+let _rurLoaded  = false;
+let _gasLoaded  = false;
 let _intLoaded  = false;
 
 function switchTab(name) {
@@ -490,8 +707,11 @@ function switchTab(name) {
   });
   document.getElementById('filter-bar-wrap').classList.toggle('d-none', name !== 'municipio');
 
-  if (name === 'nacional'       && !_nacLoaded) { _nacLoaded = true; loadNacional(); }
-  if (name === 'internacional'  && !_intLoaded) { _intLoaded = true; loadInternacional(); }
+  if (name === 'nacional'      && !_nacLoaded) { _nacLoaded = true; loadNacional(); }
+  if (name === 'hoteles'       && !_hotLoaded) { _hotLoaded = true; loadHoteles(); }
+  if (name === 'rural'         && !_rurLoaded) { _rurLoaded = true; loadRural(); }
+  if (name === 'gasto'         && !_gasLoaded) { _gasLoaded = true; loadGasto(); }
+  if (name === 'internacional' && !_intLoaded) { _intLoaded = true; loadInternacional(); }
 }
 
 document.querySelectorAll('#main-tabs button[data-tab]').forEach(btn =>
@@ -641,6 +861,125 @@ async function loadNacional() {
     renderNacionalTrendChart('chart-nac-trend', trend);
   } catch (e) {
     console.error('[App] Error cargando Vista Nacional:', e);
+  }
+}
+
+// ── Helper shared by Hoteles, Rural, Gasto ───────────────────────────────
+function _setStatSection(prefix, stats, labelPernoct, labelGasto) {
+  const s = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+  if (!stats) {
+    ['viajeros','pernoct','variacion','estancia','total','top'].forEach(k => {
+      s(`${prefix}-${k}-val`, '—'); s(`${prefix}-${k}-sub`, 'Sin datos');
+    });
+    return;
+  }
+  const mes = `${MESES_LARGO[stats.month - 1]} ${stats.year}`;
+
+  if (stats.totalViajeros !== undefined) {
+    s(`${prefix}-viajeros-val`, fmtNum(stats.totalViajeros));
+    s(`${prefix}-viajeros-sub`, mes);
+  }
+  if (stats.totalPernoct !== undefined) {
+    s(`${prefix}-pernoct-val`, fmtNum(stats.totalPernoct));
+    s(`${prefix}-pernoct-sub`, mes);
+  }
+  // Variación interanual
+  const base = stats.totalPernoct ?? stats.total;
+  const prev = stats.prevPernoct  ?? stats.prev;
+  if (base !== undefined) {
+    const pct = prev ? ((base - prev) / prev * 100).toFixed(1) : null;
+    const varEl = document.getElementById(`${prefix}-variacion-val`);
+    if (varEl) {
+      varEl.textContent = pct !== null ? (pct >= 0 ? '+' : '') + pct + '%' : '—';
+      varEl.className   = `fw-bold mb-0 ${!pct ? '' : parseFloat(pct) >= 0 ? 'text-success' : 'text-danger'}`;
+    }
+    s(`${prefix}-variacion-sub`, pct !== null ? `vs ${MESES_LARGO[stats.month - 1]} ${stats.year - 1}` : 'Sin dato anterior');
+  }
+  // Estancia media
+  if (stats.totalViajeros && stats.totalPernoct) {
+    s(`${prefix}-estancia-val`, (stats.totalPernoct / stats.totalViajeros).toFixed(1) + ' días');
+    s(`${prefix}-estancia-sub`, mes);
+  }
+  // Gasto total (EGATUR)
+  if (stats.total !== undefined) {
+    s(`${prefix}-total-val`, fmtMillones(stats.total));
+    s(`${prefix}-total-sub`, mes);
+  }
+}
+
+function fmtMillones(v) {
+  if (!v && v !== 0) return '—';
+  if (v >= 1000) return (v / 1000).toFixed(2) + ' B €';
+  return v.toFixed(0) + ' M €';
+}
+
+// ── Hoteles ───────────────────────────────────────────────────────────────────
+async function loadHoteles() {
+  const loadEl = document.getElementById('hot-loading');
+  const errEl  = document.getElementById('hot-error');
+  const cntEl  = document.getElementById('hot-content');
+  loadEl.classList.remove('d-none'); cntEl.classList.add('d-none');
+  try {
+    const [stats, byCCAA, trend] = await Promise.all([
+      getHotelesNacionalStats(), getHotelesByCCAA(), getHotelesTrend(),
+    ]);
+    _setStatSection('hot', stats);
+    renderCCAAChart('chart-hot-ccaa', byCCAA, 'Noches de estancia en hoteles por CCAA');
+    renderNacionalTrendChart('chart-hot-trend', trend, 'Noches de estancia en hoteles — evolución');
+    loadEl.classList.add('d-none'); cntEl.classList.remove('d-none');
+  } catch (e) {
+    console.error('[Hoteles]', e);
+    loadEl.classList.add('d-none'); errEl.classList.remove('d-none');
+    document.getElementById('hot-error-msg').textContent = e.message;
+  }
+}
+
+// ── Rural ─────────────────────────────────────────────────────────────────────
+async function loadRural() {
+  const loadEl = document.getElementById('rur-loading');
+  const errEl  = document.getElementById('rur-error');
+  const cntEl  = document.getElementById('rur-content');
+  loadEl.classList.remove('d-none'); cntEl.classList.add('d-none');
+  try {
+    const [stats, byCCAA, trend] = await Promise.all([
+      getRuralNacionalStats(), getRuralByCCAA(), getRuralTrend(),
+    ]);
+    _setStatSection('rur', stats);
+    renderCCAAChart('chart-rur-ccaa', byCCAA, 'Noches de estancia en turismo rural por CCAA');
+    renderNacionalTrendChart('chart-rur-trend', trend, 'Noches de estancia en rural — evolución');
+    loadEl.classList.add('d-none'); cntEl.classList.remove('d-none');
+  } catch (e) {
+    console.error('[Rural]', e);
+    loadEl.classList.add('d-none'); errEl.classList.remove('d-none');
+    document.getElementById('rur-error-msg').textContent = e.message;
+  }
+}
+
+// ── Gasto ─────────────────────────────────────────────────────────────────────
+async function loadGasto() {
+  const loadEl = document.getElementById('gas-loading');
+  const errEl  = document.getElementById('gas-error');
+  const cntEl  = document.getElementById('gas-content');
+  loadEl.classList.remove('d-none'); cntEl.classList.add('d-none');
+  try {
+    const [stats, byCCAA, trend] = await Promise.all([
+      getGastoNacionalStats(), getGastoByCCAA(), getGastoTrend(),
+    ]);
+    _setStatSection('gas', stats);
+    // Top CCAA card
+    if (byCCAA?.length) {
+      const t = document.getElementById('gas-top-val');
+      const s = document.getElementById('gas-top-sub');
+      if (t) t.textContent = byCCAA[0].ccaa;
+      if (s) s.textContent = fmtMillones(byCCAA[0].value) + ` · ${MESES_LARGO[byCCAA[0].month - 1]} ${byCCAA[0].year}`;
+    }
+    renderCCAAChart('chart-gas-ccaa', byCCAA, 'Gasto turístico internacional por CCAA');
+    renderNacionalTrendChart('chart-gas-trend', trend, 'Gasto total turistas internacionales — evolución');
+    loadEl.classList.add('d-none'); cntEl.classList.remove('d-none');
+  } catch (e) {
+    console.error('[Gasto]', e);
+    loadEl.classList.add('d-none'); errEl.classList.remove('d-none');
+    document.getElementById('gas-error-msg').textContent = e.message;
   }
 }
 
