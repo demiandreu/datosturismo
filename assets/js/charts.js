@@ -34,6 +34,9 @@ function _destroy(id) {
 const _PERSISTENT_CHARTS = new Set([
   'chart-top10', 'chart-ccaa', 'chart-nac-trend',
   'chart-paises-donut', 'chart-paises-trend',
+  'chart-hot-ccaa', 'chart-hot-trend',
+  'chart-rur-ccaa', 'chart-rur-trend',
+  'chart-gas-ccaa', 'chart-gas-trend',
 ]);
 
 function _destroyAll(excludePersistent = true) {
@@ -430,18 +433,20 @@ function updateTermometro(pernoctaciones) {
 
 // ── CCAA horizontal bar (Vista Nacional) ──────────────────────────────────
 
-function renderCCAAChart(canvasId, data) {
+function renderCCAAChart(canvasId, data, title) {
   _destroy(canvasId);
   const ctx = document.getElementById(canvasId)?.getContext('2d');
   if (!ctx || !data?.length) return;
   const { year, month } = data[0];
+  const baseLabel = title || 'Noches de estancia por CCAA';
+  const chartTitle = `${baseLabel} — ${MESES[month - 1]} ${year}`;
 
   _activeCharts[canvasId] = new Chart(ctx, {
     type: 'bar',
     data: {
       labels: data.map(d => d.ccaa),
       datasets: [{
-        label: 'Noches de estancia',
+        label: baseLabel,
         data:  data.map(d => d.value),
         backgroundColor: data.map((_, i) => i === 0 ? 'rgba(13,110,253,0.85)' : 'rgba(13,110,253,0.50)'),
         borderColor: '#0d6efd',
@@ -453,7 +458,7 @@ function renderCCAAChart(canvasId, data) {
       responsive: true,
       plugins: {
         legend: { display: false },
-        title:  { display: true, text: `Noches de estancia por CCAA — ${MESES[month - 1]} ${year}`, font: { size: 13 } },
+        title:  { display: true, text: chartTitle, font: { size: 13 } },
         tooltip: { callbacks: { label: c => ` ${fmtNum(c.parsed.x)}` } },
       },
       scales: { x: { beginAtZero: true, ticks: { callback: _axisFormatter } } },
@@ -463,7 +468,7 @@ function renderCCAAChart(canvasId, data) {
 
 // ── National trend line (Vista Nacional) ──────────────────────────────────
 
-function renderNacionalTrendChart(canvasId, data) {
+function renderNacionalTrendChart(canvasId, data, title) {
   _destroy(canvasId);
   const ctx = document.getElementById(canvasId)?.getContext('2d');
   if (!ctx || !data?.length) return;
@@ -485,7 +490,7 @@ function renderNacionalTrendChart(canvasId, data) {
         };
       }),
     },
-    options: _lineOpts('Noches de estancia totales España — evolución anual'),
+    options: _lineOpts(title || 'Noches de estancia totales España — evolución anual'),
   });
 }
 

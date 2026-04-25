@@ -1,17 +1,17 @@
 'use strict';
 
-// INE CSV for table 10822 — FRONTUR: turistas internacionales
+// INE CSV for table 23988 — FRONTUR: turistas internacionales por CCAA de destino y país
 //
-// The CSV uses a WIDE format:
-//   col 0: Países de residencia   e.g. "Reino Unido"
-//   col 1: Tipo de dato           e.g. "Dato base", "Acumulado en lo que va de año"
-//   col 2: Período                e.g. "2024M10"
-//   col 3…N: one column per CCAA  e.g. "Total Nacional", "Andalucía", "Cataluña", …
+// Long format (semicolon-separated):
+//   col 0: Países de residencia           e.g. "Reino Unido"
+//   col 1: Comunidades autónomas destino  e.g. "Cataluña", "Total Nacional"
+//   col 2: Tipo de dato                   e.g. "Dato base", "Acumulado en lo que va de año"
+//   col 3: Período                         e.g. "2024M10"
+//   col 4: Total (value)
 //
-// We parse the header to discover CCAA column names, then emit one row
-// per (pais, ccaa) pair for every "Dato base" monthly observation.
+// We keep only "Dato base" monthly rows and expose the CCAA dimension.
 
-const FRONTUR_CSV_URL = 'https://www.ine.es/jaxiT3/files/t/csv_bdsc/10822.csv';
+const FRONTUR_CSV_URL = 'https://www.ine.es/jaxiT3/files/t/es/csv_bdsc/23988.csv';
 
 const COUNTRY_FLAGS = {
   'Reino Unido':    '🇬🇧',
@@ -44,7 +44,7 @@ async function _loadFronturCSV() {
   if (_fronturRows) return _fronturRows;
 
   const res = await fetch(FRONTUR_CSV_URL);
-  if (!res.ok) throw new Error(`Error ${res.status} cargando datos FRONTUR (tabla 10822)`);
+  if (!res.ok) throw new Error(`Error ${res.status} cargando datos FRONTUR (tabla 23988)`);
   const text = await res.text();
 
   const lines = text.split('\n');
